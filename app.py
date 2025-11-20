@@ -121,13 +121,13 @@ with st.form("form_input", clear_on_submit=True):
         realisasi = st.number_input("Realisasi", 0.0)
         satuan    = st.text_input("Satuan")
 
-    # Arah penilaian
+    # ---------------- ARAH PENILAIAN ----------------
     arah = st.selectbox(
         "Arah Penilaian",
         ["Higher is Better", "Lower is Better", "Range"]
     )
 
-    # RANGE MIN MAX (muncul jika arah == Range)
+    # ---------------- RANGE MIN/MAX (hanya jika Range) ----------------
     tmin = None
     tmax = None
 
@@ -137,14 +137,16 @@ with st.form("form_input", clear_on_submit=True):
         col_min, col_max = st.columns(2)
 
         with col_min:
-            tmin = st.number_input("Target Minimal", value=0.0, step=1.0)
+            tmin = st.number_input("Target Minimal", value=0.0)
 
         with col_max:
-            tmax = st.number_input("Target Maksimal", value=0.0, step=1.0)
+            tmax = st.number_input("Target Maksimal", value=0.0)
 
+    # ---------------- Keterangan ----------------
     ket = st.text_area("Keterangan")
 
     submit = st.form_submit_button("➕ Tambah Indikator")
+
 
 
 
@@ -361,6 +363,7 @@ if len(df) > 0:
         color_continuous_scale=[COLOR_RED, COLOR_GREY, COLOR_GREEN]
     )
     st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
