@@ -236,7 +236,7 @@ if len(df) > 0:
     st.sidebar.metric("N/A", na)
 
 # ============================================================
-#  EDIT INDIKATOR (FORM EDIT BERDASARKAN INDEX)
+#  ✏️ EDIT INDIKATOR (HARUS DITARUH SEBELUM TABEL)
 # ============================================================
 st.subheader("✏️ Edit Data:")
 
@@ -244,7 +244,7 @@ if len(df) == 0:
     st.info("Belum ada data untuk diedit.")
 else:
 
-    # --- Dropdown pilih baris berdasarkan index ---
+    # --- Dropdown pilih berdasarkan index ---
     pilih_edit = st.selectbox(
         "Pilih indikator untuk diedit:",
         df.index,
@@ -252,17 +252,18 @@ else:
         key="edit_pilih_indikator"
     )
 
-# RESET FORM EDIT saat indikator diganti
-if "last_edit_idx" not in st.session_state:
-    st.session_state["last_edit_idx"] = pilih_edit
+    # --- Reset ketika ganti pilihan ---
+    if "last_edit_idx" not in st.session_state:
+        st.session_state["last_edit_idx"] = pilih_edit
 
-if st.session_state["last_edit_idx"] != pilih_edit:
-    st.session_state.clear()     # bersihkan semua nilai input
-    st.session_state["last_edit_idx"] = pilih_edit
-    st.rerun()
-    
+    if st.session_state["last_edit_idx"] != pilih_edit:
+        st.session_state.clear()
+        st.session_state["last_edit_idx"] = pilih_edit
+        st.rerun()
+
+    # --- Load data untuk diedit ---
     data_edit = df.loc[pilih_edit]
-   
+
     c1, c2, c3 = st.columns(3)
 
     with c1:
@@ -278,11 +279,10 @@ if st.session_state["last_edit_idx"] != pilih_edit:
         e_tanggal = st.date_input("Tanggal", pd.to_datetime(data_edit["Tanggal"]), key="edit_tanggal")
 
     with c3:
-        e_target = st.number_input("Target", value=float(data_edit["Target"]), key="edit_target")
-        e_realisasi = st.number_input("Realisasi", value=float(data_edit["Realisasi"]), key="edit_realisasi")
+        e_target = st.number_input("Target", float(data_edit["Target"]), key="edit_target")
+        e_realisasi = st.number_input("Realisasi", float(data_edit["Realisasi"]), key="edit_realisasi")
         e_satuan = st.text_input("Satuan", data_edit["Satuan"], key="edit_satuan")
 
-    # Arah
     e_arah = st.selectbox("Arah Penilaian",
                           ["Higher is Better","Lower is Better","Range"],
                           index=["Higher is Better","Lower is Better","Range"].index(data_edit["Arah"]),
@@ -293,11 +293,11 @@ if st.session_state["last_edit_idx"] != pilih_edit:
         r1, r2 = st.columns(2)
         with r1:
             e_min = st.number_input("Target Minimal",
-                                    value=float(data_edit["Target_Min"]) if pd.notna(data_edit["Target_Min"]) else 0.0,
+                                    float(data_edit["Target_Min"]) if pd.notna(data_edit["Target_Min"]) else 0.0,
                                     key="edit_tmin")
         with r2:
             e_max = st.number_input("Target Maksimal",
-                                    value=float(data_edit["Target_Max"]) if pd.notna(data_edit["Target_Max"]) else 0.0,
+                                    float(data_edit["Target_Max"]) if pd.notna(data_edit["Target_Max"]) else 0.0,
                                     key="edit_tmax")
 
     e_ket = st.text_area("Keterangan", data_edit["Keterangan"], key="edit_keterangan")
@@ -395,6 +395,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
