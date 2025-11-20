@@ -314,48 +314,55 @@ if st.button("💾 Simpan Perubahan Tabel"):
 # ============================================================
 #  📈 Combo Chart Profesional — Target vs Realisasi
 # ============================================================
-st.markdown("## 📊 Mini Horizontal Bars – Per Indikator (Grid 3 Kolom)")
+st.markdown("## 🌟 KPI Dashboard — Card Mewah (3 Kolom)")
 
 df_bar = df.copy()
 df_bar["Skor_Normal"] = (df_bar["Realisasi"] / df_bar["Target"]) * 100
 df_bar["Skor_Normal"] = df_bar["Skor_Normal"].round(2)
 
-
 def get_color(score):
     if score >= 100:
-        return "#27AE60"  # hijau
+        return "green"
     elif score >= 90:
-        return "#F1C40F"  # kuning
+        return "yellow"
     else:
-        return "#E74C3C"  # merah
+        return "red"
 
 df_bar["Color"] = df_bar["Skor_Normal"].apply(get_color)
 
-# =============== 3 KARTU PER BARIS ===============
 cols = st.columns(3)
-
 i = 0
-for _, row in df_bar.iterrows():
-    
-    with cols[i % 3]:   # auto wrap ke kolom 0,1,2, lalu kembali 0
-        
-        st.markdown("----")  # garis tipis
-        
-        # Judul
-        st.markdown(f"### **{row['Nama_Indikator']}**")
-        st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
 
-        # Capaian % (warna)
+for _, row in df_bar.iterrows():
+
+    badge_class = {
+        "green": "badge badge-green",
+        "yellow": "badge badge-yellow",
+        "red": "badge badge-red"
+    }[row["Color"]]
+
+    with cols[i % 3]:
+
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+
+        st.markdown(f"<h4><b>{row['Nama_Indikator']}</b></h4>", unsafe_allow_html=True)
+        st.markdown(f"<small>Unit: {row['Unit']} | Kategori: {row['Kategori']}</small>", unsafe_allow_html=True)
+        
+        # Badge capaian
         st.markdown(
-            f"<span style='color:{row['Color']}; font-weight:bold;'>Capaian: {row['Skor_Normal']}%</span>",
+            f"<span class='{badge_class}'>Capaian: {row['Skor_Normal']}%</span>",
             unsafe_allow_html=True
         )
+        st.write("")  # space
 
-        # Data grafik mini
+        # Grafik mini
         mini_df = pd.DataFrame({
             "Jenis": ["Realisasi", "Target"],
             "Nilai": [row["Realisasi"], row["Target"]],
-            "Color": [row["Color"], "#7F8C8D"]
+            "Color": [
+                {"green": "#27AE60", "yellow": "#F1C40F", "red": "#E74C3C"}[row["Color"]],
+                "#BDC3C7"
+            ]
         })
 
         chart = alt.Chart(mini_df).mark_bar(size=12).encode(
@@ -363,17 +370,15 @@ for _, row in df_bar.iterrows():
             y=alt.Y("Jenis:N", title="", sort=["Realisasi", "Target"],
                     axis=alt.Axis(labelPadding=10)),
             color=alt.Color("Color:N", scale=None)
-        ).properties(
-            height=80,
-            width=260,
-            padding={"left": 20, "top": 10, "right": 10, "bottom": 10}
-        )
+        ).properties(height=80, width=260)
 
         st.altair_chart(chart, use_container_width=False)
-        
-        st.markdown("<br>", unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
     i += 1
+
+
 
 
 
