@@ -321,17 +321,13 @@ else:
 # ---------------------------------------------------
 # EXPORT BUTTON
 # ---------------------------------------------------
-st.subheader("📤 Export Excel")
-if len(f)>0:
-    excel_file=export_excel(f)
-    st.download_button(
-        label="📥 Download Excel",
-        data=excel_file,
-        file_name="kpi_kri_kci_export.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-else:
-    st.info("Tidak ada data untuk diexport")
+excel_file = export_excel(f)
+st.download_button(
+    label="📥 Download Excel",
+    data=excel_file,
+    file_name="kpi_kri_kci_export.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
 
 # ---------------------------------------------------
 # CHARTS
@@ -359,5 +355,6 @@ if len(f)>0:
     st.plotly_chart(px.imshow(pv,text_auto=True,aspect="auto",
         color_continuous_scale=[COLOR_RED,COLOR_GREY,COLOR_GREEN]),
         use_container_width=True)
+
 
 
