@@ -183,24 +183,22 @@ if st.button("➕ Tambah Indikator"):
     st.rerun()  # << FIX PENTING
 
 # ============================================================
-#  DELETE & CLEAR DATA TAHUN INI (FIXED FINAL VERSION)
+#  DELETE & CLEAR DATA TAHUN INI (POSITION FIXED)
 # ============================================================
 st.subheader("🗑️ Hapus / Clear Data Tahun Ini")
 
-# --- Bersihkan baris kosong akibat input lama ---
-df_valid = df[df["Nama_Indikator"].notna() & (df["Nama_Indikator"] != "nan")]
-
-if len(df_valid) == 0:
-    st.info("Belum ada data valid untuk tahun ini.")
+if len(df) == 0:
+    st.info("Belum ada data untuk tahun ini.")
 else:
 
-    col_del1, col_del2 = st.columns([3, 1])   # posisi tombol rapat dan sejajar
+    # Buat kolom: 75% untuk dropdown + delete, 25% untuk clear
+    col_del_left, col_del_right = st.columns([6, 2])
 
-    # ---------------- DELETE PER INDIKATOR ----------------
-    with col_del1:
+    # ---------------- LEFT SIDE (Dropdown + Hapus) ----------------
+    with col_del_left:
         pilih_hapus = st.selectbox(
             "Pilih indikator untuk dihapus:",
-            df_valid["Nama_Indikator"].unique(),
+            df["Nama_Indikator"].unique(),
             key="hapus_indikator"
         )
 
@@ -210,8 +208,10 @@ else:
             st.success(f"Indikator '{pilih_hapus}' berhasil dihapus.")
             st.rerun()
 
-    # ---------------- CLEAR SEMUA ----------------
-    with col_del2:
+    # ---------------- RIGHT SIDE (CLEAR BUTTON) ----------------
+    with col_del_right:
+        st.write("")  # memberi jarak vertikal agar tombol pas di baris yang sama
+        st.write("")  # tambahan jarak
         if st.button("🧹 Clear Semua Data Tahun Ini"):
             kosong = init_data()
             kosong.to_csv(FILE_NAME, index=False)
@@ -308,6 +308,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
