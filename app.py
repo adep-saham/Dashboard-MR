@@ -166,7 +166,7 @@ if st.button("➕ Tambah Indikator"):
     saved.to_csv(file_input, index=False)
     st.success(f"Indikator berhasil ditambahkan ke tahun {tahun_input}!")
 
-    st.experimental_rerun()
+    st.rerun()  # << FIX PENTING
 
 # ============================================================
 #  DELETE & CLEAR DATA TAHUN INI (FIXED FINAL VERSION)
@@ -294,6 +294,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
