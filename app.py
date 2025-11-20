@@ -236,7 +236,7 @@ if len(df) > 0:
     st.sidebar.metric("N/A", na)
 
 # ============================================================
-#  EDIT INDIKATOR (FORM EDIT TERPISAH) — FIXED KEYS
+#  EDIT INDIKATOR (FORM EDIT BERDASARKAN INDEX)
 # ============================================================
 st.subheader("✏️ Edit Data:")
 
@@ -244,24 +244,22 @@ if len(df) == 0:
     st.info("Belum ada data untuk diedit.")
 else:
 
-    # Pilih indikator yang mau diedit
+    # --- Dropdown pilih baris berdasarkan index ---
     pilih_edit = st.selectbox(
         "Pilih indikator untuk diedit:",
-        df["Nama_Indikator"].unique(),
+        df.index,
+        format_func=lambda i: f"{df.loc[i,'Nama_Indikator']} | {df.loc[i,'Kategori']} | {df.loc[i,'Unit']}",
         key="edit_pilih_indikator"
     )
 
-    data_edit = df[df["Nama_Indikator"] == pilih_edit].iloc[0]
+    data_edit = df.loc[pilih_edit]
 
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        e_jenis = st.selectbox(
-            "Jenis",
-            ["KPI", "KRI", "KCI"],
-            index=["KPI","KRI","KCI"].index(data_edit["Jenis"]),
-            key="edit_jenis"
-        )
+        e_jenis = st.selectbox("Jenis", ["KPI","KRI","KCI"],
+                               index=["KPI","KRI","KCI"].index(data_edit["Jenis"]),
+                               key="edit_jenis")
         e_kategori = st.text_input("Kategori", data_edit["Kategori"], key="edit_kategori")
         e_unit = st.text_input("Unit", data_edit["Unit"], key="edit_unit")
 
@@ -275,55 +273,44 @@ else:
         e_realisasi = st.number_input("Realisasi", value=float(data_edit["Realisasi"]), key="edit_realisasi")
         e_satuan = st.text_input("Satuan", data_edit["Satuan"], key="edit_satuan")
 
-    # Arah Penilaian
-    e_arah = st.selectbox(
-        "Arah Penilaian",
-        ["Higher is Better", "Lower is Better", "Range"],
-        index=["Higher is Better", "Lower is Better", "Range"].index(data_edit["Arah"]),
-        key="edit_arah"
-    )
+    # Arah
+    e_arah = st.selectbox("Arah Penilaian",
+                          ["Higher is Better","Lower is Better","Range"],
+                          index=["Higher is Better","Lower is Better","Range"].index(data_edit["Arah"]),
+                          key="edit_arah")
 
     e_min, e_max = None, None
-
     if e_arah == "Range":
         r1, r2 = st.columns(2)
         with r1:
-            e_min = st.number_input(
-                "Target Minimal",
-                value=float(data_edit["Target_Min"]) if pd.notna(data_edit["Target_Min"]) else 0.0,
-                key="edit_tmin"
-            )
+            e_min = st.number_input("Target Minimal",
+                                    value=float(data_edit["Target_Min"]) if pd.notna(data_edit["Target_Min"]) else 0.0,
+                                    key="edit_tmin")
         with r2:
-            e_max = st.number_input(
-                "Target Maksimal",
-                value=float(data_edit["Target_Max"]) if pd.notna(data_edit["Target_Max"]) else 0.0,
-                key="edit_tmax"
-            )
+            e_max = st.number_input("Target Maksimal",
+                                    value=float(data_edit["Target_Max"]) if pd.notna(data_edit["Target_Max"]) else 0.0,
+                                    key="edit_tmax")
 
     e_ket = st.text_area("Keterangan", data_edit["Keterangan"], key="edit_keterangan")
 
-    # Tombol Simpan
     if st.button("💾 Simpan Perubahan", key="edit_simpan"):
 
-        idx = df.index[df["Nama_Indikator"] == pilih_edit][0]
-
-        df.loc[idx, "Jenis"] = e_jenis
-        df.loc[idx, "Nama_Indikator"] = e_nama
-        df.loc[idx, "Kategori"] = e_kategori
-        df.loc[idx, "Unit"] = e_unit
-        df.loc[idx, "Pemilik"] = e_pemilik
-        df.loc[idx, "Tanggal"] = e_tanggal.strftime("%Y-%m-%d")
-        df.loc[idx, "Target"] = e_target
-        df.loc[idx, "Realisasi"] = e_realisasi
-        df.loc[idx, "Satuan"] = e_satuan
-        df.loc[idx, "Keterangan"] = e_ket
-        df.loc[idx, "Arah"] = e_arah
-        df.loc[idx, "Target_Min"] = e_min
-        df.loc[idx, "Target_Max"] = e_max
+        df.loc[pilih_edit, "Jenis"] = e_jenis
+        df.loc[pilih_edit, "Nama_Indikator"] = e_nama
+        df.loc[pilih_edit, "Kategori"] = e_kategori
+        df.loc[pilih_edit, "Unit"] = e_unit
+        df.loc[pilih_edit, "Pemilik"] = e_pemilik
+        df.loc[pilih_edit, "Tanggal"] = e_tanggal.strftime("%Y-%m-%d")
+        df.loc[pilih_edit, "Target"] = e_target
+        df.loc[pilih_edit, "Realisasi"] = e_realisasi
+        df.loc[pilih_edit, "Satuan"] = e_satuan
+        df.loc[pilih_edit, "Keterangan"] = e_ket
+        df.loc[pilih_edit, "Arah"] = e_arah
+        df.loc[pilih_edit, "Target_Min"] = e_min
+        df.loc[pilih_edit, "Target_Max"] = e_max
 
         df.to_csv(FILE_NAME, index=False)
-
-        st.success(f"Perubahan pada indikator '{pilih_edit}' telah disimpan!")
+        st.success("Data berhasil diperbarui!")
         st.rerun()
 
 
@@ -399,6 +386,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
