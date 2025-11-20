@@ -1,14 +1,11 @@
 ###############################################################
-#  app.py – Final Deploy Version (CSV Export, No Excel Engines)
-#  KPI / KRI / KCI Flexible • Tahun Per Dataset • No Errors
+#  app.py – FINAL VERSION (NO DRIVE, NO STYLER, YEAR SYSTEM)
 ###############################################################
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
-import io
-from datetime import datetime
 
 # ============================================================
 #  THEME COLORS (Corporate ANTAM)
@@ -39,7 +36,6 @@ body {{
 
 st.markdown("<h1 class='main-title'>📊 Dashboard KPI / KRI / KCI</h1>", unsafe_allow_html=True)
 
-
 # ============================================================
 #  FOLDER DATA TAHUN
 # ============================================================
@@ -48,7 +44,6 @@ os.makedirs(DATA_FOLDER, exist_ok=True)
 
 def get_file_path(tahun):
     return os.path.join(DATA_FOLDER, f"data_{tahun}.csv")
-
 
 # ============================================================
 #  INITIAL EMPTY DATAFRAME
@@ -60,13 +55,11 @@ def init_data():
         "Arah","Target_Min","Target_Max","Tahun"
     ])
 
-
 # ============================================================
 #  FLEXIBLE LOGIC
 # ============================================================
 def hitung_status(row):
     arah = row.get("Arah", "Higher is Better")
-
     try:
         real = float(row["Realisasi"])
     except:
@@ -88,9 +81,8 @@ def hitung_status(row):
 
     return "N/A"
 
-
 # ============================================================
-#  SIDEBAR PILIH TAHUN
+#  SIDEBAR: PILIH TAHUN
 # ============================================================
 tahun_list = list(range(2024, 2031))
 tahun_pilih = st.sidebar.selectbox("📅 Pilih Tahun Dataset", tahun_list, index=1)
@@ -98,55 +90,62 @@ tahun_pilih = st.sidebar.selectbox("📅 Pilih Tahun Dataset", tahun_list, index
 FILE_NAME = get_file_path(tahun_pilih)
 
 # ============================================================
-#  LOAD DATA TAHUN
+#  LOAD DATA
 # ============================================================
 if os.path.exists(FILE_NAME):
     df = pd.read_csv(FILE_NAME)
 else:
     df = init_data()
 
-
 # ============================================================
 #  INPUT FORM
 # ============================================================
 st.subheader("🧾 Input Indikator Baru")
 
-with st.form("form_input"):
+with st.form("form_input", clear_on_submit=False):
+
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        jenis    = st.selectbox("Jenis", ["KPI", "KRI", "KCI"])
-        kategori = st.text_input("Kategori")
-        unit     = st.text_input("Unit")
+        jenis    = st.selectbox("Jenis", ["KPI", "KRI", "KCI"], key="jenis_input")
+        kategori = st.text_input("Kategori", key="kategori_input")
+        unit     = st.text_input("Unit", key="unit_input")
 
     with c2:
-        nama    = st.text_input("Nama Indikator")
-        pemilik = st.text_input("Pemilik")
-        tanggal = st.date_input("Tanggal")
+        nama    = st.text_input("Nama Indikator", key="nama_input")
+        pemilik = st.text_input("Pemilik", key="pemilik_input")
+        tanggal = st.date_input("Tanggal", key="tanggal_input")
 
     with c3:
-        target    = st.number_input("Target", 0.0)
-        realisasi = st.number_input("Realisasi", 0.0)
-        satuan    = st.text_input("Satuan")
+        target    = st.number_input("Target", 0.0, key="target_input")
+        realisasi = st.number_input("Realisasi", 0.0, key="realisasi_input")
+        satuan    = st.text_input("Satuan", key="satuan_input")
 
     arah = st.selectbox("Arah Penilaian", [
         "Higher is Better", "Lower is Better", "Range"
-    ])
+    ], key="arah_input")
 
-  tmin = tmax = None
+    tmin = None
+    tmax = None
+
     if arah == "Range":
-    tmin = st.number_input("Range Min", 0.0)
-    tmax = st.number_input("Range Max", 0.0)
+        st.markdown("### 🎯 Pengaturan Range Target")
+        cmin, cmax = st.columns(2)
 
+        with cmin:
+            tmin = st.number_input("Target Minimal", value=0.0, step=1.0, key="tmin_input")
 
-    ket = st.text_area("Keterangan")
+        with cmax:
+            tmax = st.number_input("Target Maksimal", value=0.0, step=1.0, key="tmax_input")
 
-    submit = st.form_submit_button("Tambah")
+    ket = st.text_area("Keterangan", key="ket_input")
 
-# Simpan jika submit
+    submit = st.form_submit_button("➕ Tambah Indikator")
+
+# Save input
 if submit:
     tahun_input = tanggal.year
-    file_input  = get_file_path(tahun_input)
+    file_input = get_file_path(tahun_input)
 
     new = pd.DataFrame([{
         "Jenis": jenis,
@@ -165,7 +164,6 @@ if submit:
         "Tahun": tahun_input
     }])
 
-    # append to file
     if os.path.exists(file_input):
         old = pd.read_csv(file_input)
         df_new = pd.concat([old, new], ignore_index=True)
@@ -173,25 +171,20 @@ if submit:
         df_new = new
 
     df_new.to_csv(file_input, index=False)
-    st.success(f"Indikator berhasil disimpan ke tahun {tahun_input}!")
+    st.success(f"Indikator disimpan ke tahun {tahun_input}!")
 
-
-# ============================================================
-#  LOAD ULANG DF UNTUK TAHUN TERPILIH
-# ============================================================
+# Reload current year
 if os.path.exists(FILE_NAME):
     df = pd.read_csv(FILE_NAME)
 else:
     df = init_data()
 
-
 # ============================================================
-#  ADD STATUS COL
+#  ADD STATUS COLUMN
 # ============================================================
 if len(df) > 0:
     df["Tanggal"] = pd.to_datetime(df["Tanggal"], errors="coerce")
     df["Status"]  = df.apply(hitung_status, axis=1)
-
 
 # ============================================================
 #  DELETE & CLEAR
@@ -202,7 +195,7 @@ c1, c2 = st.columns(2)
 
 with c1:
     if len(df) > 0:
-        pilih = st.selectbox("Pilih indikator", df["Nama_Indikator"])
+        pilih = st.selectbox("Pilih indikator", df["Nama_Indikator"], key="hapus_selector")
         if st.button("Hapus"):
             new_df = df[df["Nama_Indikator"] != pilih]
             new_df.to_csv(FILE_NAME, index=False)
@@ -214,8 +207,7 @@ with c2:
         empty = init_data()
         empty.to_csv(FILE_NAME, index=False)
         df = empty.copy()
-        st.warning(f"Semua data tahun {tahun_pilih} telah dihapus.")
-
+        st.warning(f"Semua data tahun {tahun_pilih} dihapus.")
 
 # ============================================================
 #  SIDEBAR SUMMARY MINI
@@ -235,7 +227,7 @@ if len(df) > 0:
 
     pct = hijau / total * 100 if total > 0 else 0
 
-    st.sidebar.metric("Total", total)
+    st.sidebar.metric("Total Indikator", total)
     st.sidebar.metric("Hijau", hijau)
     st.sidebar.metric("Merah", merah)
     st.sidebar.metric("N/A", na)
@@ -245,13 +237,11 @@ if len(df) > 0:
     st.sidebar.metric("KCI", kci)
     st.sidebar.markdown("---")
     st.sidebar.metric("Capaian Hijau", f"{pct:.1f}%")
-
 else:
     st.sidebar.info("Belum ada data.")
 
-
 # ============================================================
-#  TABEL COLORED (HTML)
+#  TABEL WARNA (HTML)
 # ============================================================
 st.subheader("📋 Data (Colored)")
 
@@ -261,29 +251,31 @@ if len(df) > 0:
     <thead><tr>
     """
 
-    # Header
     for col in df.columns:
         html += f"<th style='border:1px solid #ddd;padding:6px;background:#fafafa;'>{col}</th>"
+
     html += "</tr></thead><tbody>"
 
-    # Rows
     for _, row in df.iterrows():
         status = row["Status"]
+
         if status == "Hijau": bg = COLOR_GREEN
         elif status == "Merah": bg = COLOR_RED
         else: bg = COLOR_GREY
 
         html += f"<tr style='background:{bg};'>"
+
         for col in df.columns:
             html += f"<td style='border:1px solid #ddd;padding:6px;'>{row[col]}</td>"
+
         html += "</tr>"
 
     html += "</tbody></table>"
 
     st.markdown(html, unsafe_allow_html=True)
+
 else:
     st.info("Belum ada data.")
-
 
 # ============================================================
 #  EXPORT CSV
@@ -300,7 +292,6 @@ if len(df) > 0:
     )
 else:
     st.info("Tidak ada data untuk diexport.")
-
 
 # ============================================================
 #  CHARTS & HEATMAP
@@ -339,7 +330,10 @@ if len(df) > 0:
         y="Nilai",
         markers=True,
         color="Jenis_Nilai",
-        color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL}
+        color_discrete_map={
+            "Target": COLOR_GOLD,
+            "Realisasi": COLOR_TEAL
+        }
     )
     st.plotly_chart(fig2, use_container_width=True)
 
@@ -361,5 +355,3 @@ if len(df) > 0:
         color_continuous_scale=[COLOR_RED, COLOR_GREY, COLOR_GREEN]
     )
     st.plotly_chart(fig3, use_container_width=True)
-
-
