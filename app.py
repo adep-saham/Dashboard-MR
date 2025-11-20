@@ -20,75 +20,6 @@ COLOR_TEAL  = "#007E6D"
 
 st.set_page_config(page_title="Dashboard KPI/KRI/KCI", layout="wide")
 
-# ============ CARD KPI MEWAH 3 KOLOM (FIXED) =================
-
-st.markdown("## 🌟 KPI Dashboard")
-
-df_bar = df.copy()
-df_bar["Skor_Normal"] = (df_bar["Realisasi"] / df_bar["Target"]) * 100
-df_bar["Skor_Normal"] = df_bar["Skor_Normal"].round(2)
-
-def get_color(score):
-    if score >= 100:
-        return "#27AE60"   # hijau
-    elif score >= 90:
-        return "#F1C40F"   # kuning
-    else:
-        return "#E74C3C"   # merah
-
-df_bar["Color"] = df_bar["Skor_Normal"].apply(get_color)
-
-i = 0
-cols = st.columns(3)
-
-for _, row in df_bar.iterrows():
-
-    with cols[i % 3]:
-
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
-
-        # Judul
-        st.markdown(
-            f"<h4 style='margin-bottom:4px'><b>{row['Nama_Indikator']}</b></h4>",
-            unsafe_allow_html=True
-        )
-        st.markdown(
-            f"<span style='font-size:12px; color:gray;'>Unit: {row['Unit']} | "
-            f"Kategori: {row['Kategori']}</span>",
-            unsafe_allow_html=True
-        )
-
-        # Badge
-        st.markdown(
-            f"<span style='background:{row['Color']}; "
-            f"padding:6px 12px; border-radius:8px; color:white; "
-            f"font-weight:600; font-size:12px;'>"
-            f"Capaian: {row['Skor_Normal']}%</span>",
-            unsafe_allow_html=True
-        )
-
-        # Grafik mini
-        df_mini = pd.DataFrame({
-            "Jenis": ["Realisasi", "Target"],
-            "Nilai": [row["Realisasi"], row["Target"]],
-            "Color": [row["Color"], "#BDC3C7"]
-        })
-
-        chart = alt.Chart(df_mini).mark_bar(size=12).encode(
-            x=alt.X("Nilai:Q", axis=alt.Axis(format="~s")),
-            y=alt.Y("Jenis:N", sort=["Realisasi", "Target"],
-                    axis=alt.Axis(labelPadding=8)),
-            color=alt.Color("Color:N", scale=None)
-        ).properties(
-            height=75,
-            width=260
-        )
-
-        st.altair_chart(chart, use_container_width=False)
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    i += 1
 
 st.markdown(f"""
 <style>
@@ -447,6 +378,7 @@ for _, row in df_bar.iterrows():
         st.markdown("</div>", unsafe_allow_html=True)
 
     i += 1
+
 
 
 
