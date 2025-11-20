@@ -335,7 +335,7 @@ for idx, (_, row) in enumerate(df_bar.iterrows()):
     col = cols[idx % 4]  # setiap 4 pindah baris ke bawah
 
     with col:
-        st.markdown(f"### **{row['Nama_Indikator']}**")
+        st.markdown(f"##### **{row['Nama_Indikator']}**")
         st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
 
         target = row['Target']
@@ -374,6 +374,7 @@ for idx, (_, row) in enumerate(df_bar.iterrows()):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
 
 
 
