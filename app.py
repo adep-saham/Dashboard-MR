@@ -304,12 +304,6 @@ if st.button("💾 Simpan Perubahan Tabel"):
     st.success("Perubahan pada tabel berhasil disimpan!")
     st.rerun()
 
-if df_trend.empty:
-    st.warning("Tidak ada data untuk grafik ini.")
-else:
-    # grafik di sini
-
-
   st.markdown("## 📈 Combo Chart Profesional — Target vs Realisasi")
 
 if len(df) == 0:
@@ -348,6 +342,7 @@ else:
 
         combo_chart = (bar + line).properties(height=350)
         st.altair_chart(combo_chart, use_container_width=True)
+
 
 
 
