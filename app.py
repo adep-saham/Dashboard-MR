@@ -133,10 +133,19 @@ with st.form("form_input"):
         "Higher is Better", "Lower is Better", "Range"
     ])
 
-    tmin = tmax = None
-    if arah == "Range":
-        tmin = st.number_input("Range Min", 0.0)
-        tmax = st.number_input("Range Max", 0.0)
+   # Input Range Min / Max jika memilih mode Range
+tmin = None
+tmax = None
+
+if arah == "Range":
+    st.markdown("### 🎯 Pengaturan Range Target")
+    cmin, cmax = st.columns(2)
+
+    with cmin:
+        tmin = st.number_input("Target Minimal", value=0.0, step=1.0)
+
+    with cmax:
+        tmax = st.number_input("Target Maksimal", value=0.0, step=1.0)
 
     ket = st.text_area("Keterangan")
 
@@ -360,3 +369,4 @@ if len(df) > 0:
         color_continuous_scale=[COLOR_RED, COLOR_GREY, COLOR_GREEN]
     )
     st.plotly_chart(fig3, use_container_width=True)
+
