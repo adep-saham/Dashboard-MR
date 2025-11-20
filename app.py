@@ -249,12 +249,12 @@ else:
 # ===========================
 
 # Dropdown memakai index dataframe sebagai nilai sebenarnya
-pilih_edit = st.selectbox(
-    "Pilih indikator untuk diedit:",
-    options=df.index,  # <-- VALUE adalah index, bukan string
-    format_func=lambda i: f"{df.loc[i,'Nama_Indikator']} | {df.loc[i,'Kategori']} | {df.loc[i,'Unit']}",
-    key="edit_pilih"
-)
+    pilih_edit = st.selectbox(
+        "Pilih indikator untuk diedit:",
+        options=df.index,  # <-- VALUE adalah index, bukan string
+        format_func=lambda i: f"{df.loc[i,'Nama_Indikator']} | {df.loc[i,'Kategori']} | {df.loc[i,'Unit']}",
+        key="edit_pilih"
+    )
 
 # -------------------------------
 # RESET ketika pilihan indikator ganti
@@ -404,6 +404,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
