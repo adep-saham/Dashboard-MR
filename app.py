@@ -100,26 +100,35 @@ else:
 # ============================================================
 #  INPUT FORM
 # ============================================================
-st.subheader("🧾 Input Indikator Baru")
+st.subheader("TEST FORM RANGE")
 
-with st.form("form_input", clear_on_submit=True):
+with st.form("test_form", clear_on_submit=False):
 
-    c1, c2, c3 = st.columns(3)
+    arah = st.selectbox(
+        "Arah Penilaian",
+        ["Higher is Better", "Lower is Better", "Range"]
+    )
 
-    with c1:
-        jenis    = st.selectbox("Jenis", ["KPI", "KRI", "KCI"])
-        kategori = st.text_input("Kategori")
-        unit     = st.text_input("Unit")
+    tmin = None
+    tmax = None
 
-    with c2:
-        nama     = st.text_input("Nama Indikator")
-        pemilik  = st.text_input("Pemilik")
-        tanggal  = st.date_input("Tanggal")
+    if arah == "Range":
+        st.markdown("### 🎯 Pengaturan Range Target")
+        col_min, col_max = st.columns(2)
 
-    with c3:
-        target    = st.number_input("Target", 0.0)
-        realisasi = st.number_input("Realisasi", 0.0)
-        satuan    = st.text_input("Satuan")
+        with col_min:
+            tmin = st.number_input("Target Minimal", value=0.0)
+
+        with col_max:
+            tmax = st.number_input("Target Maksimal", value=0.0)
+
+    submit = st.form_submit_button("Submit")
+
+if submit:
+    st.write("arah =", arah)
+    st.write("min =", tmin)
+    st.write("max =", tmax)
+
 
     # ---------------- ARAH PENILAIAN ----------------
     arah = st.selectbox(
@@ -363,6 +372,7 @@ if len(df) > 0:
         color_continuous_scale=[COLOR_RED, COLOR_GREY, COLOR_GREEN]
     )
     st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
