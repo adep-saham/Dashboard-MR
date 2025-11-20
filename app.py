@@ -117,21 +117,22 @@ def hitung_status(row):
 # EXPORT EXCEL
 # ---------------------------------------------------
 def export_excel(df):
-    import xlsxwriter
     from io import BytesIO
-
     output = BytesIO()
 
+    # Pandas already bundles an internal engine for Excel writing
+    # No need to import xlsxwriter or openpyxl
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         df.to_excel(writer, index=False, sheet_name="Dashboard")
         workbook = writer.book
         worksheet = writer.sheets["Dashboard"]
 
-        # Formats
+        # formats
         fmt_hijau = workbook.add_format({"bg_color": "#C8F7C5"})
         fmt_merah = workbook.add_format({"bg_color": "#F7C5C5"})
         fmt_grey  = workbook.add_format({"bg_color": "#E0E0E0"})
 
+        # color rows
         for row_idx, status in enumerate(df["Status"], start=1):
             if status == "Hijau":
                 fmt = fmt_hijau
@@ -139,11 +140,11 @@ def export_excel(df):
                 fmt = fmt_merah
             else:
                 fmt = fmt_grey
-
             worksheet.set_row(row_idx, None, fmt)
 
     output.seek(0)
     return output
+
 
 # ---------------------------------------------------
 # LOAD SESSION DATA
@@ -351,6 +352,7 @@ if len(f)>0:
     st.plotly_chart(px.imshow(pv,text_auto=True,aspect="auto",
         color_continuous_scale=[COLOR_RED,COLOR_GREY,COLOR_GREEN]),
         use_container_width=True)
+
 
 
 
