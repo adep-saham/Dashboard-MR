@@ -82,6 +82,11 @@ def hitung_status(row):
 
     return "N/A"
 
+# ====================================================
+# HITUNG ULANG STATUS SETELAH LOAD CSV
+# ====================================================
+    if len(df) > 0:
+        df["Status"] = df.apply(hitung_status, axis=1)
 
 
 # ------------------------------------------------------------
@@ -307,6 +312,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
