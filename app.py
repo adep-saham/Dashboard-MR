@@ -314,13 +314,13 @@ if st.button("💾 Simpan Perubahan Tabel"):
 # ============================================================
 #  📈 Combo Chart Profesional — Target vs Realisasi
 # ============================================================
-st.markdown("## 📊 Mini Horizontal Bars – Per Indikator")
+st.markdown("## 📊 Mini Horizontal Bars – Per Indikator (Grid 3 Kolom)")
 
 df_bar = df.copy()
 df_bar["Skor_Normal"] = (df_bar["Realisasi"] / df_bar["Target"]) * 100
 df_bar["Skor_Normal"] = df_bar["Skor_Normal"].round(2)
 
-# Tentukan warna capaian
+
 def get_color(score):
     if score >= 100:
         return "#27AE60"  # hijau
@@ -331,48 +331,51 @@ def get_color(score):
 
 df_bar["Color"] = df_bar["Skor_Normal"].apply(get_color)
 
-# Loop per indikator — format "card single column"
+# =============== 3 KARTU PER BARIS ===============
+cols = st.columns(3)
+
+i = 0
 for _, row in df_bar.iterrows():
+    
+    with cols[i % 3]:   # auto wrap ke kolom 0,1,2, lalu kembali 0
+        
+        st.markdown("----")  # garis tipis
+        
+        # Judul
+        st.markdown(f"### **{row['Nama_Indikator']}**")
+        st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
 
-    st.markdown(f"### **{row['Nama_Indikator']}**")
-    st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
+        # Capaian % (warna)
+        st.markdown(
+            f"<span style='color:{row['Color']}; font-weight:bold;'>Capaian: {row['Skor_Normal']}%</span>",
+            unsafe_allow_html=True
+        )
 
-    # Capaian %
-    st.markdown(
-        f"<span style='color:{row['Color']}; font-weight:bold;'>Capaian: {row['Skor_Normal']}%</span>",
-        unsafe_allow_html=True
-    )
+        # Data grafik mini
+        mini_df = pd.DataFrame({
+            "Jenis": ["Realisasi", "Target"],
+            "Nilai": [row["Realisasi"], row["Target"]],
+            "Color": [row["Color"], "#7F8C8D"]
+        })
 
-    # Data mini graf
-    df_mini = pd.DataFrame({
-        "Jenis": ["Realisasi", "Target"],
-        "Nilai": [row["Realisasi"], row["Target"]],
-        "Color": [row["Color"], "#7F8C8D"]
-    })
+        chart = alt.Chart(mini_df).mark_bar(size=12).encode(
+            x=alt.X("Nilai:Q", title="", axis=alt.Axis(format="~s")),
+            y=alt.Y("Jenis:N", title="", sort=["Realisasi", "Target"],
+                    axis=alt.Axis(labelPadding=10)),
+            color=alt.Color("Color:N", scale=None)
+        ).properties(
+            height=80,
+            width=260,
+            padding={"left": 20, "top": 10, "right": 10, "bottom": 10}
+        )
 
-    chart = alt.Chart(df_mini).mark_bar(size=12).encode(
-    x=alt.X(
-        "Nilai:Q", 
-        title="", 
-        axis=alt.Axis(format="~s", labelFontSize=11, titleFontSize=12)
-    ),
-    y=alt.Y(
-        "Jenis:N", 
-        title="", 
-        sort=["Realisasi", "Target"],
-        axis=alt.Axis(labelPadding=10, labelFontSize=11)  # tambahkan jarak label
-    ),
-    color=alt.Color("Color:N", scale=None)
-).properties(
-    height=80,        # lebih tinggi, tidak rapat
-    width=350,        # mini, tidak terlalu lebar
-    padding={"left": 20, "top": 10, "right": 10, "bottom": 10}   # kasih ruang
-)
+        st.altair_chart(chart, use_container_width=False)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+
+    i += 1
 
 
-    st.altair_chart(chart, use_container_width=False)
-
-    st.markdown("<hr style='margin-top:10px; margin-bottom:20px;'>", unsafe_allow_html=True)
 
 
 
