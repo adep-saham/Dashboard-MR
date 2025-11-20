@@ -20,6 +20,38 @@ COLOR_TEAL  = "#007E6D"
 
 st.set_page_config(page_title="Dashboard KPI/KRI/KCI", layout="wide")
 
+# ------------------------------------------------------------
+#  CARD CSS (MEWAH)
+# ------------------------------------------------------------
+st.markdown("""
+<style>
+
+.card {
+    background: white;
+    padding: 18px 20px 18px 20px;
+    border-radius: 14px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.10);
+    margin-bottom: 20px;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+}
+
+.badge-green { background-color: #27AE60 !important; }
+.badge-yellow { background-color: #F1C40F !important; color: black !important; }
+.badge-red { background-color: #E74C3C !important; }
+
+</style>
+""", unsafe_allow_html=True)
+
+
 st.markdown(f"""
 <style>
 .main-title {{
@@ -377,6 +409,7 @@ for _, row in df_bar.iterrows():
         st.markdown("</div>", unsafe_allow_html=True)
 
     i += 1
+
 
 
 
