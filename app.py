@@ -357,80 +357,75 @@ else:
 # ============================================================
 #  📈 Combo Chart Profesional — Target vs Realisasi
 # ============================================================
-st.markdown("## 📊 Bar Chart — Target vs Realisasi + % Capaian (Auto-Color)")
+st.markdown("## 📊 Mini Horizontal Bars – Per Indikator")
 
-# Hanya kolom yang diperlukan
 df_bar = df.copy()
 df_bar["Skor_Normal"] = (df_bar["Realisasi"] / df_bar["Target"]) * 100
 df_bar["Skor_Normal"] = df_bar["Skor_Normal"].round(2)
 
-# Tentukan warna otomatis berdasarkan capaian
+# Tentukan warna berdasarkan capaian
 def get_color(score):
     if score >= 100:
-        return "Hijau"
+        return "#27AE60"  # hijau
     elif score >= 90:
-        return "Kuning"
+        return "#F1C40F"  # kuning
     else:
-        return "Merah"
+        return "#E74C3C"  # merah
 
-df_bar["Warna"] = df_bar["Skor_Normal"].apply(get_color)
+df_bar["Color"] = df_bar["Skor_Normal"].apply(get_color)
 
-# Pilih indikator
-indikator_list = df_bar["Nama_Indikator"].unique()
-pilihan = st.multiselect("Pilih indikator:", indikator_list, default=indikator_list)
+# Loop per indikator (mini bar chart)
+for _, row in df_bar.iterrows():
 
-df_plot = df_bar[df_bar["Nama_Indikator"].isin(pilihan)]
+    st.markdown(f"### **{row['Nama_Indikator']}**")
+    st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
 
-if df_plot.empty:
-    st.info("Tidak ada indikator dipilih.")
-else:
-    # Long dataframe (target & realisasi)
-    df_long = df_plot.melt(
-        id_vars=["Nama_Indikator", "Skor_Normal", "Warna"],
-        value_vars=["Target", "Realisasi"],
-        var_name="Jenis",
-        value_name="Nilai"
-    )
+    # Dataframe mini untuk plotting
+    mini_df = pd.DataFrame({
+        "Jenis": ["Target", "Realisasi"],
+        "Nilai": [row["Target"], row["Realisasi"]],
+        "Color": ["#7F8C8D", row["Color"]]   # Target abu, Realisasi auto-color
+    })
 
-    # Mapping warna dinamis
-    color_scale = alt.Scale(
-        domain=["Hijau", "Kuning", "Merah", "Target"],
-        range=["#27AE60", "#F1C40F", "#E74C3C", "#7F8C8D"]  # hijau, kuning, merah, abu gelap
-    )
-
-    # Tentukan warna: Target = abu gelap, Realisasi = warna otomatis
-    df_long["Warna_Final"] = df_long.apply(
-        lambda r: "Target" if r["Jenis"] == "Target" else r["Warna"],
-        axis=1
-    )
-
-    chart = alt.Chart(df_long).mark_bar().encode(
-        x=alt.X("Nama_Indikator:N", title="Indikator", sort="-y"),
-        y=alt.Y("Nilai:Q", title="Nilai"),
-        color=alt.Color("Warna_Final:N", scale=color_scale, title=""),
+    chart = alt.Chart(mini_df).mark_bar().encode(
+        x=alt.X("Nilai:Q", title=""),
+        y=alt.Y("Jenis:N", title="", sort=["Realisasi", "Target"]),
+        color=alt.Color("Color:N", scale=None),
         tooltip=[
-            "Nama_Indikator",
-            "Jenis",
-            "Nilai",
-            alt.Tooltip("Skor_Normal", title="Capaian (%)"),
-            alt.Tooltip("Warna_Final", title="Status Warna")
+            alt.Tooltip("Jenis", title="Jenis"),
+            alt.Tooltip("Nilai", title="Nilai"),
+            alt.Tooltip("Color", title="Warna")
         ]
-    ).properties(height=450)
-
-    # Label % capaian di atas bar realisasi
-    label = alt.Chart(df_plot).mark_text(
-        align="center",
-        baseline="bottom",
-        dy=-5,
-        fontSize=11,
-        fontWeight="bold",
-    ).encode(
-        x="Nama_Indikator:N",
-        y="Realisasi:Q",
-        text=alt.Text("Skor_Normal:Q", format=".1f")
+    ).properties(
+        height=80,
+        width="container"
     )
 
-    st.altair_chart(chart + label, use_container_width=True)
+    # Label % capaian
+    label = alt.Chart(pd.DataFrame({"Skor": [row["Skor_Normal"]]})).mark_text(
+        align="left",
+        baseline="middle",
+        dx=5,
+        dy=-10,
+        fontSize=12,
+        fontWeight="bold",
+        color=row["Color"]
+    ).encode(
+        x=alt.value(5),
+        y=alt.value(5),
+        text=alt.Text("Skor:Q", format=".1f")
+    )
+
+    st.altair_chart(chart, use_container_width=True)
+
+    st.markdown(
+        f"<span style='color:{row['Color']}; font-weight:bold;'>Capaian: {row['Skor_Normal']}%</span>",
+        unsafe_allow_html=True
+    )
+
+    st.markdown("---")
+
+
 
 
 
