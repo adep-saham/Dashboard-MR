@@ -252,6 +252,16 @@ else:
         key="edit_pilih_indikator"
     )
 
+# RESET FORM EDIT saat indikator diganti
+if "last_edit_idx" not in st.session_state:
+    st.session_state["last_edit_idx"] = pilih_edit
+
+if st.session_state["last_edit_idx"] != pilih_edit:
+    st.session_state.clear()     # bersihkan semua nilai input
+    st.session_state["last_edit_idx"] = pilih_edit
+    st.rerun()
+
+    
     data_edit = df.loc[pilih_edit]
 
     c1, c2, c3 = st.columns(3)
@@ -386,6 +396,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
