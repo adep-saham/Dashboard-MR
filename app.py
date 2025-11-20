@@ -63,15 +63,12 @@ def hitung_status(row):
     # normalisasi
     arah = str(row.get("Arah", "")).strip().lower()
 
-    # HIGHER IS BETTER
     if arah == "higher is better":
         return "Hijau" if real >= target else "Merah"
 
-    # LOWER IS BETTER
     if arah == "lower is better":
         return "Hijau" if real <= target else "Merah"
 
-    # RANGE
     if arah == "range":
         try:
             tmin = float(row["Target_Min"])
@@ -81,14 +78,6 @@ def hitung_status(row):
             return "N/A"
 
     return "N/A"
-
-
-# ====================================================
-# HITUNG ULANG STATUS SETELAH LOAD CSV
-# ====================================================
-    if len(df) > 0:
-        df["Status"] = df.apply(hitung_status, axis=1)
-
 
 # ------------------------------------------------------------
 #  SIDEBAR SELECT YEAR
@@ -111,6 +100,12 @@ df = df[df["Nama_Indikator"].notna()]
 df = df[df["Nama_Indikator"] != "nan"]
 df = df[df["Nama_Indikator"] != ""]
 df = df[df["Nama_Indikator"].str.strip() != ""]
+
+# ====================================================
+# HITUNG ULANG STATUS SETELAH LOAD CSV
+# ====================================================
+if len(df) > 0:
+    df["Status"] = df.apply(hitung_status, axis=1)
 
 # ------------------------------------------------------------
 #  INPUT FORM (VERSION FIXED)
@@ -313,6 +308,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
