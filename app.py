@@ -244,25 +244,34 @@ if len(df) == 0:
     st.info("Belum ada data untuk diedit.")
 else:
 
-    # --- Dropdown pilih berdasarkan index ---
-    pilih_edit = st.selectbox(
-        "Pilih indikator untuk diedit:",
-        df.index,
-        format_func=lambda i: f"{df.loc[i,'Nama_Indikator']} | {df.loc[i,'Kategori']} | {df.loc[i,'Unit']}",
-        key="edit_pilih_indikator"
-    )
+# ===========================
+# PILIH DATA YANG AKAN DIEDIT
+# ===========================
 
-    # --- Reset ketika ganti pilihan ---
-    if "last_edit_idx" not in st.session_state:
-        st.session_state["last_edit_idx"] = pilih_edit
+# Dropdown memakai index dataframe sebagai nilai sebenarnya
+pilih_edit = st.selectbox(
+    "Pilih indikator untuk diedit:",
+    options=df.index,  # <-- VALUE adalah index, bukan string
+    format_func=lambda i: f"{df.loc[i,'Nama_Indikator']} | {df.loc[i,'Kategori']} | {df.loc[i,'Unit']}",
+    key="edit_pilih"
+)
 
-    if st.session_state["last_edit_idx"] != pilih_edit:
-        st.session_state.clear()
-        st.session_state["last_edit_idx"] = pilih_edit
-        st.rerun()
+# -------------------------------
+# RESET ketika pilihan indikator ganti
+# -------------------------------
+if "last_edit" not in st.session_state:
+    st.session_state["last_edit"] = pilih_edit
 
-    # --- Load data untuk diedit ---
-    data_edit = df.loc[pilih_edit]
+if st.session_state["last_edit"] != pilih_edit:
+    st.session_state.clear()
+    st.session_state["last_edit"] = pilih_edit
+    st.rerun()
+
+# --------------------------------
+# AMBIL DATA EDIT BERDASARKAN INDEX
+# --------------------------------
+data_edit = df.loc[pilih_edit]
+
 
     c1, c2, c3 = st.columns(3)
 
@@ -395,6 +404,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
