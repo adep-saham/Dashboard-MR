@@ -302,32 +302,27 @@ if st.button("💾 Simpan Perubahan Tabel"):
     st.success("Perubahan pada tabel berhasil disimpan!")
     st.rerun()
 
+st.markdown("## 📈 Combo Chart Profesional — Target vs Realisasi")
 
-# ------------------------------------------------------------
-#  CHARTS
-# ------------------------------------------------------------
-if len(df) > 0:
+df_trend = df.copy()
+df_trend["Tanggal"] = pd.to_datetime(df_trend["Tanggal"])
 
-    # Status bar chart
-    st.subheader("📊 Status per Jenis")
-    g = df.groupby(["Jenis", "Status"]).size().reset_index(name="Jumlah")
-    fig = px.bar(g, x="Jenis", y="Jumlah", color="Status",
-                  color_discrete_map={"Hijau": COLOR_TEAL, "Merah": COLOR_RED})
-    st.plotly_chart(fig, use_container_width=True)
+base = alt.Chart(df_trend).encode(
+    x=alt.X("Tanggal:T", title="Tanggal")
+)
 
-    # Trend chart
-    st.subheader("📈 Tren Target vs Realisasi")
-    indikator_list = df["Nama_Indikator"].unique()
-    pick = st.selectbox("Pilih Indikator", indikator_list, key="trend_pick")
+bar = base.mark_bar(color="#2E86C1", opacity=0.6).encode(
+    y=alt.Y("Realisasi:Q", title="Realisasi"),
+    tooltip=["Nama_Indikator", "Realisasi", "Target", "Tanggal"]
+)
 
-    d2 = df[df["Nama_Indikator"] == pick].sort_values("Tanggal")
-    melt = d2.melt(id_vars=["Tanggal"], value_vars=["Target","Realisasi"],
-                   var_name="Jenis", value_name="Nilai")
+line = base.mark_line(color="#E74C3C", point=True).encode(
+    y=alt.Y("Target:Q", title="Target")
+)
 
-    fig2 = px.line(melt, x="Tanggal", y="Nilai", color="Jenis",
-                    markers=True,
-                    color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
-    st.plotly_chart(fig2, use_container_width=True)
+combo_chart = (bar + line).properties(height=350)
+st.altair_chart(combo_chart, use_container_width=True)
+
 
 
 
