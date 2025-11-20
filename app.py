@@ -109,6 +109,11 @@ df = df[df["Nama_Indikator"].str.strip() != ""]
 if len(df) > 0:
     df["Status"] = df.apply(hitung_status, axis=1)
 
+# =====================================================
+# NORMALISASI REALISASI TERHADAP TARGET (DALAM %)
+# =====================================================
+df["Skor_Normal"] = (df["Realisasi"].astype(float) / df["Target"].astype(float)) * 100
+df["Skor_Normal"] = df["Skor_Normal"].round(2)
 
 # ------------------------------------------------------------
 #  INPUT FORM (VERSION FIXED)
@@ -307,37 +312,46 @@ if st.button("💾 Simpan Perubahan Tabel"):
 # ============================================================
 #  📈 Combo Chart Profesional — Target vs Realisasi
 # ============================================================
-st.markdown("## 📈 Combo Chart Profesional — Target vs Realisasi")
+st.markdown("## 📊 Combo Chart Profesional — Capaian (%)")
 
-if len(df) == 0:
-    st.info("Belum ada data untuk grafik ini.")
+df_trend = df.copy()
+df_trend["Tanggal"] = pd.to_datetime(df_trend["Tanggal"], errors="coerce")
+df_trend = df_trend.dropna(subset=["Tanggal"])
+
+if df_trend.empty:
+    st.warning("Belum ada data untuk ditampilkan pada grafik.")
 else:
-    df_trend = df.copy()
-
-    df_trend["Tanggal"] = pd.to_datetime(df_trend["Tanggal"], errors="coerce")
-    df_trend = df_trend.dropna(subset=["Tanggal"])
-
-    if df_trend.empty:
-        st.warning("Tidak ada data tanggal valid untuk grafik ini.")
-    else:
-        base = alt.Chart(df_trend).encode(
-            x=alt.X("Tanggal:T", title="Tanggal")
+    # Garis capaian realisasi (%)
+    line_chart = (
+        alt.Chart(df_trend)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X("Tanggal:T", title="Tanggal"),
+            y=alt.Y("Skor_Normal:Q", title="Capaian (%)"),
+            color=alt.Color("Nama_Indikator:N", title="Indikator"),
+            tooltip=[
+                "Nama_Indikator",
+                alt.Tooltip("Target", title="Target"),
+                alt.Tooltip("Realisasi", title="Realisasi"),
+                alt.Tooltip("Skor_Normal", title="Capaian (%)"),
+                "Satuan",
+                "Tanggal",
+            ],
         )
+        .properties(height=400)
+    )
 
-        bar = base.mark_bar(color="#3498DB", opacity=0.45).encode(
-            y=alt.Y("Realisasi:Q", title="Realisasi"),
-            tooltip=["Nama_Indikator","Realisasi","Target","Tanggal"]
-        )
+    # Garis Target (100%)
+    target_line = (
+        alt.Chart(df_trend)
+        .mark_rule(color="red", strokeDash=[5, 5])
+        .encode(y=alt.Y("value:Q"))
+        .transform_calculate(value="100")
+    )
 
-        line = base.mark_line(
-            color="#E74C3C",
-            point=True,
-            strokeWidth=2
-        ).encode(
-            y=alt.Y("Target:Q", title="Target")
-        )
+    st.altair_chart((line_chart + target_line), use_container_width=True)
 
-        st.altair_chart((bar + line).properties(height=350), use_container_width=True)
+
 
 
 
