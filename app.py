@@ -107,6 +107,144 @@ df = df[df["Nama_Indikator"].str.strip() != ""]
 if len(df) > 0:
     df["Status"] = df.apply(hitung_status, axis=1)
 
+# ============================================================
+#  MODAL STATE
+# ============================================================
+if "edit_mode" not in st.session_state:
+    st.session_state.edit_mode = False
+
+if "row_to_edit" not in st.session_state:
+    st.session_state.row_to_edit = None
+
+
+# ============================================================
+#  FUNGSI MEMBUKA & MENUTUP MODAL
+# ============================================================
+def open_modal(row_index):
+    st.session_state.edit_mode = True
+    st.session_state.row_to_edit = row_index
+
+
+def close_modal():
+    st.session_state.edit_mode = False
+    st.session_state.row_to_edit = None
+
+
+# ============================================================
+#  TABEL DENGAN TOMBOL EDIT
+# ============================================================
+st.subheader("📋 Data (Colored)")
+
+for i, row in df.iterrows():
+    c1, c2 = st.columns([10, 1])
+    with c1:
+        st.write(
+            f"**{row['Nama_Indikator']}** — {row['Kategori']} — {row['Unit']} — Status: {row['Status']}"
+        )
+    with c2:
+        if st.button("✏️ Edit", key=f"editbtn_{i}", use_container_width=True):
+            open_modal(i)
+
+
+# ============================================================
+#  POPUP MODAL EDIT
+# ============================================================
+if st.session_state.edit_mode:
+
+    # Ambil data
+    idx = st.session_state.row_to_edit
+    data = df.loc[idx]
+
+    # ----------- MODAL LAYER -----------
+    modal_css = """
+    <style>
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.45);
+        z-index: 99998;
+    }
+    .modal-box {
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 25px;
+        width: 60%;
+        border-radius: 10px;
+        z-index: 99999;
+        box-shadow: 0px 0px 20px rgba(0,0,0,0.3);
+    }
+    </style>
+    """
+
+    st.markdown(modal_css, unsafe_allow_html=True)
+
+    modal_html = """
+    <div class="modal-overlay"></div>
+    <div class="modal-box">
+    """
+    st.markdown(modal_html, unsafe_allow_html=True)
+
+    st.subheader("✏️ Edit Data Indikator")
+
+    # ----------- FORM EDIT DALAM MODAL -----------
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        e_jenis = st.selectbox("Jenis", ["KPI", "KRI", "KCI"],
+                               index=["KPI","KRI","KCI"].index(data["Jenis"]),
+                               key="modal_jenis")
+        e_kategori = st.text_input("Kategori", data["Kategori"], key="modal_kategori")
+
+    with col2:
+        e_nama = st.text_input("Nama Indikator", data["Nama_Indikator"], key="modal_nama")
+        e_pemilik = st.text_input("Pemilik", data["Pemilik"], key="modal_pemilik")
+
+    with col3:
+        e_target = st.number_input("Target", float(data["Target"]), key="modal_target")
+        e_realisasi = st.number_input("Realisasi", float(data["Realisasi"]), key="modal_realisasi")
+
+    e_satuan = st.text_input("Satuan", data["Satuan"], key="modal_satuan")
+    e_arah = st.selectbox(
+        "Arah Penilaian",
+        ["Higher is Better", "Lower is Better", "Range"],
+        index=["Higher is Better","Lower is Better","Range"].index(data["Arah"]),
+        key="modal_arah"
+    )
+    e_ket = st.text_area("Keterangan", data["Keterangan"], height=120, key="modal_ket")
+
+    # ----------- TOMBOL SAVE / CANCEL -----------
+    csave, ccancel = st.columns(2)
+
+    with csave:
+        if st.button("💾 Simpan Perubahan", use_container_width=True):
+
+            df.loc[idx, "Jenis"] = e_jenis
+            df.loc[idx, "Nama_Indikator"] = e_nama
+            df.loc[idx, "Kategori"] = e_kategori
+            df.loc[idx, "Pemilik"] = e_pemilik
+            df.loc[idx, "Target"] = e_target
+            df.loc[idx, "Realisasi"] = e_realisasi
+            df.loc[idx, "Satuan"] = e_satuan
+            df.loc[idx, "Arah"] = e_arah
+            df.loc[idx, "Keterangan"] = e_ket
+
+            df.to_csv(FILE_NAME, index=False)
+            st.success("Data berhasil diperbarui!")
+            close_modal()
+            st.rerun()
+
+    with ccancel:
+        if st.button("❌ Batal", use_container_width=True):
+            close_modal()
+            st.rerun()
+
+    # Tutup modal div
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 # ------------------------------------------------------------
 #  INPUT FORM (VERSION FIXED)
 # ------------------------------------------------------------
@@ -327,6 +465,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
