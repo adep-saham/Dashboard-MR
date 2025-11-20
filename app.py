@@ -98,19 +98,43 @@ else:
     df = init_data()
 
 # ============================================================
-#  INPUT FORM
+# RESET FORM STATE
 # ============================================================
-st.subheader("TEST FORM RANGE")
+if "reset_form" in st.session_state:
+    for k in list(st.session_state.keys()):
+        if k != "reset_form":
+            del st.session_state[k]
+    del st.session_state["reset_form"]
 
-with st.form("test_form", clear_on_submit=False):
+# ============================================================
+# FORM INPUT
+# ============================================================
+st.subheader("🧾 Input Indikator Baru")
 
-    arah = st.selectbox(
-        "Arah Penilaian",
+with st.form("form_input", clear_on_submit=False):
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        jenis    = st.selectbox("Jenis", ["KPI", "KRI", "KCI"])
+        kategori = st.text_input("Kategori")
+        unit     = st.text_input("Unit")
+
+    with c2:
+        nama     = st.text_input("Nama Indikator")
+        pemilik  = st.text_input("Pemilik")
+        tanggal  = st.date_input("Tanggal")
+
+    with c3:
+        target    = st.number_input("Target", 0.0)
+        realisasi = st.number_input("Realisasi", 0.0)
+        satuan    = st.text_input("Satuan")
+
+    arah = st.selectbox("Arah Penilaian",
         ["Higher is Better", "Lower is Better", "Range"]
     )
 
-    tmin = None
-    tmax = None
+    tmin, tmax = None, None
 
     if arah == "Range":
         st.markdown("### 🎯 Pengaturan Range Target")
@@ -122,42 +146,20 @@ with st.form("test_form", clear_on_submit=False):
         with col_max:
             tmax = st.number_input("Target Maksimal", value=0.0)
 
-    submit = st.form_submit_button("Submit")
-
-if submit:
-    st.write("arah =", arah)
-    st.write("min =", tmin)
-    st.write("max =", tmax)
-
-
-    # ---------------- ARAH PENILAIAN ----------------
-    arah = st.selectbox(
-        "Arah Penilaian",
-        ["Higher is Better", "Lower is Better", "Range"]
-    )
-
-    # ---------------- RANGE MIN/MAX (hanya jika Range) ----------------
-    tmin = None
-    tmax = None
-
-    if arah == "Range":
-        st.markdown("### 🎯 Pengaturan Range Target")
-
-        col_min, col_max = st.columns(2)
-
-        with col_min:
-            tmin = st.number_input("Target Minimal", value=0.0)
-
-        with col_max:
-            tmax = st.number_input("Target Maksimal", value=0.0)
-
-    # ---------------- Keterangan ----------------
     ket = st.text_area("Keterangan")
 
     submit = st.form_submit_button("➕ Tambah Indikator")
 
+# -------------------
+# SUBMIT HANDLING
+# -------------------
+if submit:
+    st.success("Berhasil disimpan!")
 
+    # YOUR DATA SAVE CODE HERE
 
+    st.session_state["reset_form"] = True
+    st.experimental_rerun()
 
 # Save input
 if submit:
@@ -372,6 +374,7 @@ if len(df) > 0:
         color_continuous_scale=[COLOR_RED, COLOR_GREY, COLOR_GREEN]
     )
     st.plotly_chart(fig3, use_container_width=True)
+
 
 
 
