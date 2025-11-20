@@ -312,67 +312,6 @@ if st.button("💾 Simpan Perubahan Tabel"):
     st.success("Perubahan pada tabel berhasil disimpan!")
     st.rerun()
 
-# ============================================================
-#  📈 Combo Chart Profesional — Target vs Realisasi
-# ============================================================
-st.markdown("## 📊 KPI Dashboard")
-
-# Ambil data indikator
-df_bar = df.copy()
-
-# Urutkan supaya output rapi
-df_bar = df_bar.sort_values("Nama_Indikator")
-
-# Buat 4 kolom
-col1, col2, col3, col4 = st.columns(4, gap="large")
-
-cols = [col1, col2, col3, col4]
-
-# Loop semua indikator
-for idx, (_, row) in enumerate(df_bar.iterrows()):
-    col = cols[idx % 4]  # setiap 4 pindah baris ke bawah
-
-    with col:
-        st.markdown(f"##### **{row['Nama_Indikator']}**")
-        st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
-
-        target = row['Target']
-        real = row['Realisasi']
-        capai = (real / target * 100) if target > 0 else 0
-
-        st.markdown(f"""
-        <span style='color:#d9534f; font-weight:bold;'>Capaian: {capai:.2f}%</span>
-        """, unsafe_allow_html=True)
-
-        # --- Mini Horizontal Bar ---
-        fig = go.Figure()
-
-        fig.add_trace(go.Bar(
-            x=[real],
-            y=["Realisasi"],
-            orientation='h',
-            marker=dict(color="#ff6b6b"),
-            width=0.4
-        ))
-
-        fig.add_trace(go.Bar(
-            x=[target],
-            y=["Target"],
-            orientation='h',
-            marker=dict(color="#9aa0a6"),
-            width=0.4
-        ))
-
-        fig.update_layout(
-            height=130,
-            showlegend=False,
-            margin=dict(l=0, r=0, t=10, b=0),
-            xaxis=dict(showgrid=True, zeroline=False),
-            yaxis=dict(showgrid=False)
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
 # =========================
 #   FUNGSI CHART MINI
 # =========================
@@ -463,6 +402,7 @@ def tampilkan_section(title, data):
 tampilkan_section("🔥 KPI", df_kpi)
 tampilkan_section("⚠️ KRI", df_kri)
 tampilkan_section("🔐 KCI", df_kci)
+
 
 
 
