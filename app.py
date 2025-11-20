@@ -357,44 +357,82 @@ else:
 # ============================================================
 #  📈 Combo Chart Profesional — Target vs Realisasi
 # ============================================================
-st.markdown("## 📊 Combo Chart Profesional — Capaian (%)")
+st.markdown("## 📊 Bar Chart — Target vs Realisasi + % Capaian (Auto-Color)")
 
-df_trend = df.copy()
-df_trend["Tanggal"] = pd.to_datetime(df_trend["Tanggal"], errors="coerce")
-df_trend = df_trend.dropna(subset=["Tanggal"])
+# Hanya kolom yang diperlukan
+df_bar = df.copy()
+df_bar["Skor_Normal"] = (df_bar["Realisasi"] / df_bar["Target"]) * 100
+df_bar["Skor_Normal"] = df_bar["Skor_Normal"].round(2)
 
-if df_trend.empty:
-    st.warning("Belum ada data untuk ditampilkan pada grafik.")
+# Tentukan warna otomatis berdasarkan capaian
+def get_color(score):
+    if score >= 100:
+        return "Hijau"
+    elif score >= 90:
+        return "Kuning"
+    else:
+        return "Merah"
+
+df_bar["Warna"] = df_bar["Skor_Normal"].apply(get_color)
+
+# Pilih indikator
+indikator_list = df_bar["Nama_Indikator"].unique()
+pilihan = st.multiselect("Pilih indikator:", indikator_list, default=indikator_list)
+
+df_plot = df_bar[df_bar["Nama_Indikator"].isin(pilihan)]
+
+if df_plot.empty:
+    st.info("Tidak ada indikator dipilih.")
 else:
-    # Garis capaian realisasi (%)
-    line_chart = (
-        alt.Chart(df_trend)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X("Tanggal:T", title="Tanggal"),
-            y=alt.Y("Skor_Normal:Q", title="Capaian (%)"),
-            color=alt.Color("Nama_Indikator:N", title="Indikator"),
-            tooltip=[
-                "Nama_Indikator",
-                alt.Tooltip("Target", title="Target"),
-                alt.Tooltip("Realisasi", title="Realisasi"),
-                alt.Tooltip("Skor_Normal", title="Capaian (%)"),
-                "Satuan",
-                "Tanggal",
-            ],
-        )
-        .properties(height=400)
+    # Long dataframe (target & realisasi)
+    df_long = df_plot.melt(
+        id_vars=["Nama_Indikator", "Skor_Normal", "Warna"],
+        value_vars=["Target", "Realisasi"],
+        var_name="Jenis",
+        value_name="Nilai"
     )
 
-    # Garis Target (100%)
-    target_line = (
-        alt.Chart(df_trend)
-        .mark_rule(color="red", strokeDash=[5, 5])
-        .encode(y=alt.Y("value:Q"))
-        .transform_calculate(value="100")
+    # Mapping warna dinamis
+    color_scale = alt.Scale(
+        domain=["Hijau", "Kuning", "Merah", "Target"],
+        range=["#27AE60", "#F1C40F", "#E74C3C", "#7F8C8D"]  # hijau, kuning, merah, abu gelap
     )
 
-    st.altair_chart((line_chart + target_line), use_container_width=True)
+    # Tentukan warna: Target = abu gelap, Realisasi = warna otomatis
+    df_long["Warna_Final"] = df_long.apply(
+        lambda r: "Target" if r["Jenis"] == "Target" else r["Warna"],
+        axis=1
+    )
+
+    chart = alt.Chart(df_long).mark_bar().encode(
+        x=alt.X("Nama_Indikator:N", title="Indikator", sort="-y"),
+        y=alt.Y("Nilai:Q", title="Nilai"),
+        color=alt.Color("Warna_Final:N", scale=color_scale, title=""),
+        tooltip=[
+            "Nama_Indikator",
+            "Jenis",
+            "Nilai",
+            alt.Tooltip("Skor_Normal", title="Capaian (%)"),
+            alt.Tooltip("Warna_Final", title="Status Warna")
+        ]
+    ).properties(height=450)
+
+    # Label % capaian di atas bar realisasi
+    label = alt.Chart(df_plot).mark_text(
+        align="center",
+        baseline="bottom",
+        dy=-5,
+        fontSize=11,
+        fontWeight="bold",
+    ).encode(
+        x="Nama_Indikator:N",
+        y="Realisasi:Q",
+        text=alt.Text("Skor_Normal:Q", format=".1f")
+    )
+
+    st.altair_chart(chart + label, use_container_width=True)
+
+
 
 
 
