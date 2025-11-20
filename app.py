@@ -304,25 +304,22 @@ if st.button("💾 Simpan Perubahan Tabel"):
     st.success("Perubahan pada tabel berhasil disimpan!")
     st.rerun()
 
-  st.markdown("## 📈 Combo Chart Profesional — Target vs Realisasi")
+# ============================================================
+#  📈 Combo Chart Profesional — Target vs Realisasi
+# ============================================================
+st.markdown("## 📈 Combo Chart Profesional — Target vs Realisasi")
 
 if len(df) == 0:
     st.info("Belum ada data untuk grafik ini.")
 else:
-    # Buat dataframe grafik
     df_trend = df.copy()
 
-    # Convert tanggal
     df_trend["Tanggal"] = pd.to_datetime(df_trend["Tanggal"], errors="coerce")
-
-    # Buang baris tanpa tanggal
     df_trend = df_trend.dropna(subset=["Tanggal"])
 
-    # Cek jika kosong
     if df_trend.empty:
-        st.warning("Data tidak memiliki tanggal yang valid untuk grafik.")
+        st.warning("Tidak ada data tanggal valid untuk grafik ini.")
     else:
-        
         base = alt.Chart(df_trend).encode(
             x=alt.X("Tanggal:T", title="Tanggal")
         )
@@ -340,8 +337,9 @@ else:
             y=alt.Y("Target:Q", title="Target")
         )
 
-        combo_chart = (bar + line).properties(height=350)
-        st.altair_chart(combo_chart, use_container_width=True)
+        st.altair_chart((bar + line).properties(height=350), use_container_width=True)
+
+
 
 
 
