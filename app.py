@@ -331,41 +331,39 @@ def get_color(score):
 
 df_bar["Color"] = df_bar["Skor_Normal"].apply(get_color)
 
-# Loop per indikator
+# Loop per indikator — format "card single column"
 for _, row in df_bar.iterrows():
 
-    # Buat layout 2 kolom
-    col1, col2 = st.columns([1, 1])   # 50% kiri, 50% kanan
+    st.markdown(f"### **{row['Nama_Indikator']}**")
+    st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
 
-    with col1:
-        st.markdown(f"### **{row['Nama_Indikator']}**")
-        st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
+    # Capaian %
+    st.markdown(
+        f"<span style='color:{row['Color']}; font-weight:bold;'>Capaian: {row['Skor_Normal']}%</span>",
+        unsafe_allow_html=True
+    )
 
-        st.markdown(
-            f"<span style='color:{row['Color']}; font-weight:bold;'>Capaian: {row['Skor_Normal']}%</span>",
-            unsafe_allow_html=True
-        )
+    # Data mini graf
+    df_mini = pd.DataFrame({
+        "Jenis": ["Realisasi", "Target"],
+        "Nilai": [row["Realisasi"], row["Target"]],
+        "Color": [row["Color"], "#7F8C8D"]
+    })
 
-    with col2:
-        # Data mini graf
-        df_mini = pd.DataFrame({
-            "Jenis": ["Target", "Realisasi"],
-            "Nilai": [row["Target"], row["Realisasi"]],
-            "Color": ["#7F8C8D", row["Color"]]
-        })
+    chart = alt.Chart(df_mini).mark_bar().encode(
+        x=alt.X("Nilai:Q", title="", axis=alt.Axis(format="~s")),
+        y=alt.Y("Jenis:N", title="", sort=["Realisasi", "Target"]),
+        color=alt.Color("Color:N", scale=None)
+    ).properties(
+        height=55,      # kecil / mini
+        width=350       # TIDAK full width
+    )
 
-        chart = alt.Chart(df_mini).mark_bar().encode(
-            x=alt.X("Nilai:Q", title=""),
-            y=alt.Y("Jenis:N", title="", sort=["Realisasi", "Target"]),
-            color=alt.Color("Color:N", scale=None)
-        ).properties(
-            height=80,
-            width=300          # <<=== setengah layar, bisa diubah 250–350
-        )
+    st.altair_chart(chart, use_container_width=False)
 
-        st.altair_chart(chart, use_container_width=False)
+    st.markdown("<hr style='margin-top:10px; margin-bottom:20px;'>", unsafe_allow_html=True)
 
-    st.markdown("---")
+
 
 
 
