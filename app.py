@@ -314,7 +314,7 @@ if st.button("💾 Simpan Perubahan Tabel"):
 # ============================================================
 #  📈 Combo Chart Profesional — Target vs Realisasi
 # ============================================================
-st.markdown("## 🌟 KPI Dashboard — Card Mewah (3 Kolom)")
+st.markdown("## 🌟 KPI Dashboard ")
 
 df_bar = df.copy()
 df_bar["Skor_Normal"] = (df_bar["Realisasi"] / df_bar["Target"]) * 100
@@ -377,6 +377,7 @@ for _, row in df_bar.iterrows():
         st.markdown("</div>", unsafe_allow_html=True)
 
     i += 1
+
 
 
 
