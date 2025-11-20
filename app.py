@@ -60,18 +60,18 @@ def hitung_status(row):
     except:
         return "N/A"
 
-    # Normalisasi arah (capitals, spasi)
+    # normalisasi
     arah = str(row.get("Arah", "")).strip().lower()
 
-    # -------- Higher is Better --------
-    if arah == "higher is better".lower():
+    # HIGHER IS BETTER
+    if arah == "higher is better":
         return "Hijau" if real >= target else "Merah"
 
-    # -------- Lower is Better --------
-    if arah == "lower is better".lower():
+    # LOWER IS BETTER
+    if arah == "lower is better":
         return "Hijau" if real <= target else "Merah"
 
-    # -------- Range Mode --------
+    # RANGE
     if arah == "range":
         try:
             tmin = float(row["Target_Min"])
@@ -81,6 +81,7 @@ def hitung_status(row):
             return "N/A"
 
     return "N/A"
+
 
 # ====================================================
 # HITUNG ULANG STATUS SETELAH LOAD CSV
@@ -312,6 +313,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
