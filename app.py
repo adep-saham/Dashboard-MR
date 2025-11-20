@@ -102,7 +102,7 @@ else:
 # ============================================================
 st.subheader("🧾 Input Indikator Baru")
 
-with st.form("form_input", clear_on_submit=False):
+with st.form("form_input", clear_on_submit=True):
 
     c1, c2, c3 = st.columns(3)
 
@@ -361,5 +361,6 @@ if len(df) > 0:
         color_continuous_scale=[COLOR_RED, COLOR_GREY, COLOR_GREEN]
     )
     st.plotly_chart(fig3, use_container_width=True)
+
 
 
