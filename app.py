@@ -7,6 +7,8 @@ import pandas as pd
 import plotly.express as px
 import os
 import altair as alt
+import plotly.graph_objects as go
+import plotly.express as px
 
 
 # ------------------------------------------------------------
@@ -372,6 +374,7 @@ for idx, (_, row) in enumerate(df_bar.iterrows()):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
 
 
 
