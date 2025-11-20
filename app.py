@@ -119,32 +119,35 @@ def hitung_status(row):
 # EXPORT EXCEL
 # ---------------------------------------------------
 def export_excel(df):
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Dashboard Export"
+    import pandas as pd
+    import xlsxwriter
+    from io import BytesIO
 
-    for col_idx, col in enumerate(df.columns, 1):
-        ws.cell(row=1, column=col_idx, value=col)
+    output = BytesIO()
 
-    for row_idx, row in enumerate(df.itertuples(index=False), 2):
-        for col_idx, value in enumerate(row, 1):
-            ws.cell(row=row_idx, column=col_idx, value=value)
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df.to_excel(writer, index=False, sheet_name="Dashboard")
+        workbook = writer.book
+        worksheet = writer.sheets["Dashboard"]
 
-        status = getattr(row, "Status", None)
-        if status == "Hijau":
-            fill = PatternFill(start_color="C8F7C5", fill_type="solid")
-        elif status == "Merah":
-            fill = PatternFill(start_color="F7C5C5", fill_type="solid")
-        else:
-            fill = PatternFill(start_color="E0E0E0", fill_type="solid")
+        # Define formats
+        fmt_hijau = workbook.add_format({"bg_color": "#C8F7C5"})
+        fmt_merah = workbook.add_format({"bg_color": "#F7C5C5"})
+        fmt_grey  = workbook.add_format({"bg_color": "#E0E0E0"})
 
-        for col_idx in range(1, len(df.columns)+1):
-            ws.cell(row=row_idx, column=col_idx).fill = fill
+        # Apply color row by row
+        for row_idx, status in enumerate(df["Status"], start=1):
+            if status == "Hijau":
+                fmt = fmt_hijau
+            elif status == "Merah":
+                fmt = fmt_merah
+            else:
+                fmt = fmt_grey
 
-    buffer = io.BytesIO()
-    wb.save(buffer)
-    buffer.seek(0)
-    return buffer
+            worksheet.set_row(row_idx, None, fmt)
+
+    output.seek(0)
+    return output
 
 # ---------------------------------------------------
 # LOAD SESSION DATA
@@ -356,4 +359,5 @@ if len(f)>0:
     st.plotly_chart(px.imshow(pv,text_auto=True,aspect="auto",
         color_continuous_scale=[COLOR_RED,COLOR_GREY,COLOR_GREEN]),
         use_container_width=True)
+
 
