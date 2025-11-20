@@ -177,27 +177,48 @@ st.sidebar.markdown(
 """
 )
 
-# -------------------- INPUT / EDIT DATA DI APLIKASI --------------------
-st.subheader("🧾 Input / Edit Data Indikator")
+# -------------------- FORM INPUT / MENU TAMBAH DATA --------------------
+st.subheader("🧾 Tambah Indikator (Form)")
 
-st.markdown(
-    """
-Edit atau tambahkan baris langsung di tabel di bawah:
+with st.form("form_tambah_indikator"):
+    col_a, col_b, col_c = st.columns(3)
+    with col_a:
+        jenis = st.selectbox("Jenis Indikator", ["KPI", "KRI", "KCI"])
+        kategori = st.text_input("Kategori", "Keuangan")
+        unit = st.text_input("Unit", "HO")
+    with col_b:
+        nama = st.text_input("Nama Indikator", "ROIC")
+        pemilik = st.text_input("Pemilik / PIC", "Corporate Performance")
+        tanggal = st.date_input("Tanggal")
+    with col_c:
+        target = st.number_input("Target", value=0.0, step=0.1)
+        realisasi = st.number_input("Realisasi", value=0.0, step=0.1)
+        satuan = st.text_input("Satuan", "%")
 
-- Klik sel untuk mengubah isi.
-- Klik **+** di baris paling bawah untuk menambah indikator.
-- Kolom `Jenis` isi: `KPI`, `KRI`, atau `KCI`.
-"""
-)
+    keterangan = st.text_area("Keterangan (opsional)", "")
 
-edited_df = st.data_editor(
-    st.session_state.df_indikator,
-    num_rows="dynamic",
-    use_container_width=True,
-    key="editor_indikator"
-)
+    submitted = st.form_submit_button("➕ Tambah ke Data")
 
-st.session_state.df_indikator = edited_df.copy()
+if submitted:
+    # Tambah baris baru ke DataFrame di session_state
+    new_row = {
+        "Jenis": jenis,
+        "Nama_Indikator": nama,
+        "Kategori": kategori,
+        "Unit": unit,
+        "Pemilik": pemilik,
+        "Tanggal": tanggal.strftime("%Y-%m-%d"),
+        "Target": target,
+        "Realisasi": realisasi,
+        "Satuan": satuan,
+        "Keterangan": keterangan,
+    }
+    st.session_state.df_indikator = pd.concat(
+        [st.session_state.df_indikator, pd.DataFrame([new_row])],
+        ignore_index=True
+    )
+    st.success(f"Indikator '{nama}' berhasil ditambahkan.")
+
 df = st.session_state.df_indikator.copy()
 
 # -------------------- TOMBOL SIMPAN / RELOAD DARI DRIVE --------------------
@@ -219,6 +240,7 @@ with col_reload:
             df_drive = drive_download_df(drive_service, DRIVE_FOLDER_ID, FILE_NAME)
             if df_drive is not None:
                 st.session_state.df_indikator = df_drive
+                df = df_drive.copy()
                 st.success("✅ Data berhasil di-load ulang dari Google Drive.")
             else:
                 st.warning("File di Google Drive belum ada.")
@@ -227,7 +249,7 @@ with col_reload:
 
 # -------------------- PRE-PROSES DATA UNTUK DASHBOARD --------------------
 if df.empty:
-    st.warning("Belum ada data indikator. Tambahkan minimal satu baris di tabel di atas.")
+    st.warning("Belum ada data indikator. Tambahkan minimal satu baris lewat form di atas.")
     st.stop()
 
 # Nama kolom jadi konsisten (tanpa spasi)
@@ -244,7 +266,15 @@ if missing:
 df["Tanggal"] = pd.to_datetime(df["Tanggal"], errors="coerce")
 df["Status"] = df.apply(hitung_status, axis=1).fillna("N/A")
 
-# -------------------- FILTER DI SIDEBAR --------------------
+# -------------------- TAMPILKAN DATA EXISTING --------------------
+st.subheader("📋 Data Indikator (Semua)")
+
+st.dataframe(
+    df.sort_values(["Jenis", "Kategori", "Unit", "Nama_Indikator"]),
+    use_container_width=True,
+)
+
+# -------------------- FILTER DI SIDEBAR UNTUK DASHBOARD --------------------
 st.sidebar.header("🔍 Filter Dashboard")
 
 jenis_options = ["All"] + sorted(df["Jenis"].dropna().unique().tolist())
@@ -293,7 +323,7 @@ filtered = filtered[
 ]
 
 # -------------------- RINGKASAN --------------------
-st.subheader("📌 Ringkasan Utama")
+st.subheader("📌 Ringkasan Utama (Setelah Filter)")
 
 total_ind = len(filtered)
 total_hijau = (filtered["Status"] == "Hijau").sum()
@@ -313,7 +343,7 @@ with c2:
 with c3:
     st.metric("Indikator Merah", f"{total_merah} ({pct_merah}%)")
 
-# -------------------- TABEL DETAIL --------------------
+# -------------------- TABEL DETAIL FILTERED --------------------
 st.subheader("📋 Tabel Indikator (Setelah Filter)")
 
 st.dataframe(
