@@ -8,8 +8,6 @@ import plotly.express as px
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
-from openpyxl import Workbook
-from openpyxl.styles import PatternFill
 import io
 
 # ---------------------------------------------------
@@ -119,7 +117,6 @@ def hitung_status(row):
 # EXPORT EXCEL
 # ---------------------------------------------------
 def export_excel(df):
-    import pandas as pd
     import xlsxwriter
     from io import BytesIO
 
@@ -130,12 +127,11 @@ def export_excel(df):
         workbook = writer.book
         worksheet = writer.sheets["Dashboard"]
 
-        # Define formats
+        # Formats
         fmt_hijau = workbook.add_format({"bg_color": "#C8F7C5"})
         fmt_merah = workbook.add_format({"bg_color": "#F7C5C5"})
         fmt_grey  = workbook.add_format({"bg_color": "#E0E0E0"})
 
-        # Apply color row by row
         for row_idx, status in enumerate(df["Status"], start=1):
             if status == "Hijau":
                 fmt = fmt_hijau
@@ -355,6 +351,7 @@ if len(f)>0:
     st.plotly_chart(px.imshow(pv,text_auto=True,aspect="auto",
         color_continuous_scale=[COLOR_RED,COLOR_GREY,COLOR_GREEN]),
         use_container_width=True)
+
 
 
 
