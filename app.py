@@ -1,15 +1,14 @@
 ###############################################################
-#  app.py – Final Deploy Version (CSV Export, No Excel Engine)
-#  KPI / KRI / KCI Flexible • Corporate ANTAM Theme • No Errors
+#  app.py – Final Deploy Version (CSV Export, No Excel Engines)
+#  KPI / KRI / KCI Flexible • Tahun Per Dataset • No Errors
 ###############################################################
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
+import os
 import io
+from datetime import datetime
 
 # ============================================================
 #  THEME COLORS (Corporate ANTAM)
@@ -19,8 +18,6 @@ COLOR_RED   = "#F7C5C5"
 COLOR_GREY  = "#E0E0E0"
 COLOR_GOLD  = "#C8A951"
 COLOR_TEAL  = "#007E6D"
-
-FILE_NAME = "kpi_kri_kci_data.csv"
 
 # ============================================================
 #  STREAMLIT PAGE SETTINGS
@@ -44,76 +41,32 @@ st.markdown("<h1 class='main-title'>📊 Dashboard KPI / KRI / KCI</h1>", unsafe
 
 
 # ============================================================
-#  GOOGLE DRIVE CONNECTION
+#  FOLDER DATA TAHUN
 # ============================================================
-@st.cache_resource
-def get_drive_service():
-    creds_info = st.secrets["gcp_service_account"]
-    folder_id = creds_info.get("drive_folder_id")
+DATA_FOLDER = "data_tahun"
+os.makedirs(DATA_FOLDER, exist_ok=True)
 
-    creds = service_account.Credentials.from_service_account_info(
-        creds_info,
-        scopes=["https://www.googleapis.com/auth/drive.file"]
-    )
-    service = build("drive", "v3", credentials=creds)
-    return service, folder_id
-
-def drive_find(service, folder_id, name):
-    query = f"name='{name}' and '{folder_id}' in parents and trashed=false"
-    resp = service.files().list(q=query, fields="files(id)").execute()
-    files = resp.get("files", [])
-    return files[0] if files else None
-
-def drive_load(service, folder_id, name):
-    meta = drive_find(service, folder_id, name)
-    if not meta:
-        return None
-
-    req = service.files().get_media(fileId=meta["id"])
-    fh  = io.BytesIO()
-    dl  = MediaIoBaseDownload(fh, req)
-
-    done = False
-    while not done:
-        _, done = dl.next_chunk()
-
-    fh.seek(0)
-    return pd.read_csv(fh)
-
-def drive_save(service, folder_id, name, df):
-    data = df.to_csv(index=False).encode("utf-8")
-    media = MediaIoBaseUpload(io.BytesIO(data), "text/csv")
-
-    meta = drive_find(service, folder_id, name)
-    if meta:
-        service.files().update(fileId=meta["id"], media_body=media).execute()
-    else:
-        service.files().create(
-            body={
-                "name": name,
-                "parents": [folder_id],
-                "mimeType": "text/csv"
-            },
-            media_body=media
-        ).execute()
+def get_file_path(tahun):
+    return os.path.join(DATA_FOLDER, f"data_{tahun}.csv")
 
 
 # ============================================================
-#  INITIAL DATA
+#  INITIAL EMPTY DATAFRAME
 # ============================================================
 def init_data():
     return pd.DataFrame(columns=[
-        "Jenis", "Nama_Indikator", "Kategori", "Unit", "Pemilik", "Tanggal",
-        "Target", "Realisasi", "Satuan", "Keterangan",
-        "Arah", "Target_Min", "Target_Max"
+        "Jenis","Nama_Indikator","Kategori","Unit","Pemilik","Tanggal",
+        "Target","Realisasi","Satuan","Keterangan",
+        "Arah","Target_Min","Target_Max","Tahun"
     ])
 
 
 # ============================================================
-#  FLEXIBLE LOGIC FOR KPI / KRI / KCI
+#  FLEXIBLE LOGIC
 # ============================================================
 def hitung_status(row):
     arah = row.get("Arah", "Higher is Better")
+
     try:
         real = float(row["Realisasi"])
     except:
@@ -127,9 +80,9 @@ def hitung_status(row):
 
     if arah == "Range":
         try:
-            tmin = float(row["Target_Min"])
-            tmax = float(row["Target_Max"])
-            return "Hijau" if tmin <= real <= tmax else "Merah"
+            mn = float(row["Target_Min"])
+            mx = float(row["Target_Max"])
+            return "Hijau" if mn <= real <= mx else "Merah"
         except:
             return "N/A"
 
@@ -137,17 +90,20 @@ def hitung_status(row):
 
 
 # ============================================================
-#  LOAD SESSION DATA
+#  SIDEBAR PILIH TAHUN
 # ============================================================
-if "df" not in st.session_state:
-    try:
-        service, folder_id = get_drive_service()
-        df_drive = drive_load(service, folder_id, FILE_NAME)
-        st.session_state.df = df_drive if df_drive is not None else init_data()
-    except:
-        st.session_state.df = init_data()
+tahun_list = list(range(2024, 2031))
+tahun_pilih = st.sidebar.selectbox("📅 Pilih Tahun Dataset", tahun_list, index=1)
 
-df = st.session_state.df.copy()
+FILE_NAME = get_file_path(tahun_pilih)
+
+# ============================================================
+#  LOAD DATA TAHUN
+# ============================================================
+if os.path.exists(FILE_NAME):
+    df = pd.read_csv(FILE_NAME)
+else:
+    df = init_data()
 
 
 # ============================================================
@@ -174,9 +130,7 @@ with st.form("form_input"):
         satuan    = st.text_input("Satuan")
 
     arah = st.selectbox("Arah Penilaian", [
-        "Higher is Better",
-        "Lower is Better",
-        "Range"
+        "Higher is Better", "Lower is Better", "Range"
     ])
 
     tmin = tmax = None
@@ -188,66 +142,50 @@ with st.form("form_input"):
 
     submit = st.form_submit_button("Tambah")
 
-
+# Simpan jika submit
 if submit:
+    tahun_input = tanggal.year
+    file_input  = get_file_path(tahun_input)
+
     new = pd.DataFrame([{
-        "Jenis": jenis, "Nama_Indikator": nama, "Kategori": kategori,
-        "Unit": unit, "Pemilik": pemilik, "Tanggal": tanggal.strftime("%Y-%m-%d"),
-        "Target": target, "Realisasi": realisasi, "Satuan": satuan,
-        "Keterangan": ket, "Arah": arah, "Target_Min": tmin, "Target_Max": tmax
+        "Jenis": jenis,
+        "Nama_Indikator": nama,
+        "Kategori": kategori,
+        "Unit": unit,
+        "Pemilik": pemilik,
+        "Tanggal": tanggal.strftime("%Y-%m-%d"),
+        "Target": target,
+        "Realisasi": realisasi,
+        "Satuan": satuan,
+        "Keterangan": ket,
+        "Arah": arah,
+        "Target_Min": tmin,
+        "Target_Max": tmax,
+        "Tahun": tahun_input
     }])
 
-    st.session_state.df = pd.concat([df, new], ignore_index=True)
-    df = st.session_state.df.copy()
-    st.success("Indikator berhasil ditambahkan!")
+    # append to file
+    if os.path.exists(file_input):
+        old = pd.read_csv(file_input)
+        df_new = pd.concat([old, new], ignore_index=True)
+    else:
+        df_new = new
+
+    df_new.to_csv(file_input, index=False)
+    st.success(f"Indikator berhasil disimpan ke tahun {tahun_input}!")
 
 
 # ============================================================
-#  DELETE & CLEAR
+#  LOAD ULANG DF UNTUK TAHUN TERPILIH
 # ============================================================
-st.subheader("🗑️ Hapus / Clear")
-
-c1, c2 = st.columns(2)
-
-with c1:
-    if len(df) > 0:
-        pilih = st.selectbox("Pilih indikator", df["Nama_Indikator"])
-        if st.button("Hapus"):
-            st.session_state.df = df[df["Nama_Indikator"] != pilih]
-            df = st.session_state.df.copy()
-            st.success("Data berhasil dihapus.")
-
-with c2:
-    if st.button("Clear Semua"):
-        st.session_state.df = init_data()
-        df = st.session_state.df.copy()
-        st.warning("Semua data dihapus.")
+if os.path.exists(FILE_NAME):
+    df = pd.read_csv(FILE_NAME)
+else:
+    df = init_data()
 
 
 # ============================================================
-#  SAVE / RELOAD
-# ============================================================
-st.subheader("💾 Sinkronisasi")
-
-c1, c2 = st.columns(2)
-
-with c1:
-    if st.button("Save ke Google Drive"):
-        service, folder_id = get_drive_service()
-        drive_save(service, folder_id, FILE_NAME, df)
-        st.success("Data tersimpan ke Google Drive.")
-
-with c2:
-    if st.button("Reload dari Google Drive"):
-        service, folder_id = get_drive_service()
-        df_drive = drive_load(service, folder_id, FILE_NAME)
-        st.session_state.df = df_drive if df_drive is not None else init_data()
-        df = st.session_state.df.copy()
-        st.success("Reload berhasil.")
-
-
-# ============================================================
-#  ADD STATUS COLUMN
+#  ADD STATUS COL
 # ============================================================
 if len(df) > 0:
     df["Tanggal"] = pd.to_datetime(df["Tanggal"], errors="coerce")
@@ -255,51 +193,36 @@ if len(df) > 0:
 
 
 # ============================================================
-#  SIDEBAR FILTER
+#  DELETE & CLEAR
 # ============================================================
-st.sidebar.header("🔍 Filter Dashboard")
+st.subheader("🗑️ Hapus / Clear Data Tahun Ini")
 
-if len(df) > 0:
+c1, c2 = st.columns(2)
 
-    jenis_f = st.sidebar.multiselect("Jenis",
-                 ["All"] + df["Jenis"].unique().tolist(), ["All"])
+with c1:
+    if len(df) > 0:
+        pilih = st.selectbox("Pilih indikator", df["Nama_Indikator"])
+        if st.button("Hapus"):
+            new_df = df[df["Nama_Indikator"] != pilih]
+            new_df.to_csv(FILE_NAME, index=False)
+            df = new_df.copy()
+            st.success("Berhasil dihapus.")
 
-    unit_f  = st.sidebar.multiselect("Unit",
-                 ["All"] + df["Unit"].unique().tolist(), ["All"])
-
-    kat_f   = st.sidebar.multiselect("Kategori",
-                 ["All"] + df["Kategori"].unique().tolist(), ["All"])
-
-    min_d, max_d = df["Tanggal"].min(), df["Tanggal"].max()
-
-    d_rng = st.sidebar.date_input("Tanggal", value=(min_d, max_d))
-
-    f = df.copy()
-
-    if "All" not in jenis_f:
-        f = f[f["Jenis"].isin(jenis_f)]
-
-    if "All" not in unit_f:
-        f = f[f["Unit"].isin(unit_f)]
-
-    if "All" not in kat_f:
-        f = f[f["Kategori"].isin(kat_f)]
-
-    f = f[(f["Tanggal"] >= pd.to_datetime(d_rng[0])) &
-          (f["Tanggal"] <= pd.to_datetime(d_rng[1]))]
-
-else:
-    f = df.copy()
+with c2:
+    if st.button("Clear Semua Data Tahun Ini"):
+        empty = init_data()
+        empty.to_csv(FILE_NAME, index=False)
+        df = empty.copy()
+        st.warning(f"Semua data tahun {tahun_pilih} telah dihapus.")
 
 
 # ============================================================
 #  SIDEBAR SUMMARY MINI
 # ============================================================
 st.sidebar.markdown("---")
-st.sidebar.header("📊 Ringkasan")
+st.sidebar.header("📊 Ringkasan Tahun Ini")
 
 if len(df) > 0:
-
     total = len(df)
     hijau = (df["Status"] == "Hijau").sum()
     merah = (df["Status"] == "Merah").sum()
@@ -327,64 +250,51 @@ else:
 
 
 # ============================================================
-#  TABLE (COLORED)
+#  TABEL COLORED (HTML)
 # ============================================================
 st.subheader("📋 Data (Colored)")
 
 if len(df) > 0:
     html = """
-    <style>
-    table {border-collapse: collapse; width: 100%;}
-    th, td {border: 1px solid #ddd; padding: 8px; text-align: left;}
-    tr:nth-child(even) {background-color: #f2f2f2;}
-    </style>
-    <table>
-        <thead>
-            <tr>
+    <table style='border-collapse:collapse;width:100%;'>
+    <thead><tr>
     """
 
     # Header
     for col in df.columns:
-        html += f"<th>{col}</th>"
+        html += f"<th style='border:1px solid #ddd;padding:6px;background:#fafafa;'>{col}</th>"
     html += "</tr></thead><tbody>"
 
-    # Rows with color
+    # Rows
     for _, row in df.iterrows():
         status = row["Status"]
+        if status == "Hijau": bg = COLOR_GREEN
+        elif status == "Merah": bg = COLOR_RED
+        else: bg = COLOR_GREY
 
-        if status == "Hijau":
-            bg = COLOR_GREEN
-        elif status == "Merah":
-            bg = COLOR_RED
-        else:
-            bg = COLOR_GREY
-
-        html += f"<tr style='background-color:{bg};'>"
+        html += f"<tr style='background:{bg};'>"
         for col in df.columns:
-            html += f"<td>{row[col]}</td>"
+            html += f"<td style='border:1px solid #ddd;padding:6px;'>{row[col]}</td>"
         html += "</tr>"
 
     html += "</tbody></table>"
 
     st.markdown(html, unsafe_allow_html=True)
-
 else:
     st.info("Belum ada data.")
-
 
 
 # ============================================================
 #  EXPORT CSV
 # ============================================================
-st.subheader("📤 Export CSV")
+st.subheader("📤 Export CSV Tahun Ini")
 
-if len(f) > 0:
-    csv_data = f.to_csv(index=False).encode("utf-8")
-
+if len(df) > 0:
+    csv_data = df.to_csv(index=False).encode("utf-8")
     st.download_button(
         label="📥 Download CSV",
         data=csv_data,
-        file_name="kpi_kri_kci_export.csv",
+        file_name=f"export_{tahun_pilih}.csv",
         mime="text/csv"
     )
 else:
@@ -394,10 +304,10 @@ else:
 # ============================================================
 #  CHARTS & HEATMAP
 # ============================================================
-if len(f) > 0:
+if len(df) > 0:
 
     st.subheader("📊 Status per Jenis")
-    g = f.groupby(["Jenis", "Status"]).size().reset_index(name="Jumlah")
+    g = df.groupby(["Jenis", "Status"]).size().reset_index(name="Jumlah")
 
     fig = px.bar(
         g,
@@ -410,9 +320,11 @@ if len(f) > 0:
     st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("📈 Tren Target vs Realisasi")
-    pick = st.selectbox("Pilih indikator", f["Nama_Indikator"].unique(), key="trend_selector")
+    indicators = df["Nama_Indikator"].unique()
 
-    d2 = f[f["Nama_Indikator"] == pick].sort_values("Tanggal")
+    pick = st.selectbox("Pilih indikator", indicators, key="trend_selector")
+
+    d2 = df[df["Nama_Indikator"] == pick].sort_values("Tanggal")
     long = d2.melt(
         id_vars=["Tanggal"],
         value_vars=["Target", "Realisasi"],
@@ -424,18 +336,17 @@ if len(f) > 0:
         long,
         x="Tanggal",
         y="Nilai",
-        color="Jenis_Nilai",
         markers=True,
+        color="Jenis_Nilai",
         color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL}
     )
     st.plotly_chart(fig2, use_container_width=True)
 
     st.subheader("🗺️ Heatmap Unit vs Kategori")
-    score = {"Hijau": 1, "Merah": 0, "N/A": 0.5}
+    score_map = {"Hijau": 1, "Merah": 0, "N/A": 0.5}
+    df["Score"] = df["Status"].map(score_map)
 
-    f["Score"] = f["Status"].map(score)
-
-    pv = f.pivot_table(
+    pv = df.pivot_table(
         index="Unit",
         columns="Kategori",
         values="Score",
@@ -449,6 +360,3 @@ if len(f) > 0:
         color_continuous_scale=[COLOR_RED, COLOR_GREY, COLOR_GREEN]
     )
     st.plotly_chart(fig3, use_container_width=True)
-
-
-
