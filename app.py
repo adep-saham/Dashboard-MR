@@ -437,7 +437,7 @@ def tampilkan_chart(row):
 #  DASHBOARD PER JENIS (KPI / KRI / KCI)
 # =====================================================
 
-st.markdown("## 📊 KPI Dashboard")
+st.markdown("## 📊 Dashboard")
 
 # Pisahkan data berdasarkan jenis indikator
 df_kpi = df[df["Jenis"] == "KPI"]
@@ -463,6 +463,7 @@ def tampilkan_section(title, data):
 tampilkan_section("🔥 KPI", df_kpi)
 tampilkan_section("⚠️ KRI", df_kri)
 tampilkan_section("🔐 KCI", df_kci)
+
 
 
 
