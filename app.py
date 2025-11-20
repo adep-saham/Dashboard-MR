@@ -350,18 +350,30 @@ for _, row in df_bar.iterrows():
         "Color": [row["Color"], "#7F8C8D"]
     })
 
-    chart = alt.Chart(df_mini).mark_bar().encode(
-        x=alt.X("Nilai:Q", title="", axis=alt.Axis(format="~s")),
-        y=alt.Y("Jenis:N", title="", sort=["Realisasi", "Target"]),
-        color=alt.Color("Color:N", scale=None)
-    ).properties(
-        height=55,      # kecil / mini
-        width=350       # TIDAK full width
-    )
+    chart = alt.Chart(df_mini).mark_bar(size=12).encode(
+    x=alt.X(
+        "Nilai:Q", 
+        title="", 
+        axis=alt.Axis(format="~s", labelFontSize=11, titleFontSize=12)
+    ),
+    y=alt.Y(
+        "Jenis:N", 
+        title="", 
+        sort=["Realisasi", "Target"],
+        axis=alt.Axis(labelPadding=10, labelFontSize=11)  # tambahkan jarak label
+    ),
+    color=alt.Color("Color:N", scale=None)
+).properties(
+    height=80,        # lebih tinggi, tidak rapat
+    width=350,        # mini, tidak terlalu lebar
+    padding={"left": 20, "top": 10, "right": 10, "bottom": 10}   # kasih ruang
+)
+
 
     st.altair_chart(chart, use_container_width=False)
 
     st.markdown("<hr style='margin-top:10px; margin-bottom:20px;'>", unsafe_allow_html=True)
+
 
 
 
