@@ -107,6 +107,82 @@ df = df[df["Nama_Indikator"].str.strip() != ""]
 if len(df) > 0:
     df["Status"] = df.apply(hitung_status, axis=1)
 
+
+# ------------------------------------------------------------
+#  INPUT FORM (VERSION FIXED)
+# ------------------------------------------------------------
+st.subheader("🧾 Input Indikator Baru")
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    jenis    = st.selectbox("Jenis", ["KPI", "KRI", "KCI"])
+    kategori = st.text_input("Kategori")
+    unit     = st.text_input("Unit")
+
+with c2:
+    nama     = st.text_input("Nama Indikator")
+    pemilik  = st.text_input("Pemilik")
+    tanggal  = st.date_input("Tanggal")
+
+with c3:
+    target    = st.number_input("Target", 0.0)
+    realisasi = st.number_input("Realisasi", 0.0)
+    satuan    = st.text_input("Satuan")
+
+arah = st.selectbox(
+    "Arah Penilaian",
+    ["Higher is Better", "Lower is Better", "Range"]
+)
+
+tmin, tmax = None, None
+
+# ----- DYNAMIC RANGE UI -----
+if arah == "Range":
+    st.markdown("### 🎯 Pengaturan Range Target")
+
+    colr1, colr2 = st.columns(2)
+    with colr1:
+        tmin = st.number_input("Target Minimal", value=0.0)
+    with colr2:
+        tmax = st.number_input("Target Maksimal", value=0.0)
+
+ket = st.text_area("Keterangan")
+
+# ---- SUBMIT BUTTON ----
+if st.button("➕ Tambah Indikator"):
+
+    tahun_input = tanggal.year
+    file_input  = get_file_path(tahun_input)
+
+    new = pd.DataFrame([{
+        "Jenis": jenis,
+        "Nama_Indikator": nama,
+        "Kategori": kategori,
+        "Unit": unit,
+        "Pemilik": pemilik,
+        "Tanggal": tanggal.strftime("%Y-%m-%d"),
+        "Target": target,
+        "Realisasi": realisasi,
+        "Satuan": satuan,
+        "Keterangan": ket,
+        "Arah": arah,
+        "Target_Min": tmin,
+        "Target_Max": tmax,
+        "Tahun": tahun_input
+    }])
+
+    if os.path.exists(file_input):
+        old = pd.read_csv(file_input)
+        saved = pd.concat([old, new], ignore_index=True)
+    else:
+        saved = new
+
+    saved.to_csv(file_input, index=False)
+    st.success(f"Indikator berhasil ditambahkan ke tahun {tahun_input}!")
+
+    st.rerun()  # << FIX PENTING
+
 # ============================================================
 #  MODAL STATE
 # ============================================================
@@ -244,81 +320,6 @@ if st.session_state.edit_mode:
     # Tutup modal div
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-# ------------------------------------------------------------
-#  INPUT FORM (VERSION FIXED)
-# ------------------------------------------------------------
-st.subheader("🧾 Input Indikator Baru")
-
-c1, c2, c3 = st.columns(3)
-
-with c1:
-    jenis    = st.selectbox("Jenis", ["KPI", "KRI", "KCI"])
-    kategori = st.text_input("Kategori")
-    unit     = st.text_input("Unit")
-
-with c2:
-    nama     = st.text_input("Nama Indikator")
-    pemilik  = st.text_input("Pemilik")
-    tanggal  = st.date_input("Tanggal")
-
-with c3:
-    target    = st.number_input("Target", 0.0)
-    realisasi = st.number_input("Realisasi", 0.0)
-    satuan    = st.text_input("Satuan")
-
-arah = st.selectbox(
-    "Arah Penilaian",
-    ["Higher is Better", "Lower is Better", "Range"]
-)
-
-tmin, tmax = None, None
-
-# ----- DYNAMIC RANGE UI -----
-if arah == "Range":
-    st.markdown("### 🎯 Pengaturan Range Target")
-
-    colr1, colr2 = st.columns(2)
-    with colr1:
-        tmin = st.number_input("Target Minimal", value=0.0)
-    with colr2:
-        tmax = st.number_input("Target Maksimal", value=0.0)
-
-ket = st.text_area("Keterangan")
-
-# ---- SUBMIT BUTTON ----
-if st.button("➕ Tambah Indikator"):
-
-    tahun_input = tanggal.year
-    file_input  = get_file_path(tahun_input)
-
-    new = pd.DataFrame([{
-        "Jenis": jenis,
-        "Nama_Indikator": nama,
-        "Kategori": kategori,
-        "Unit": unit,
-        "Pemilik": pemilik,
-        "Tanggal": tanggal.strftime("%Y-%m-%d"),
-        "Target": target,
-        "Realisasi": realisasi,
-        "Satuan": satuan,
-        "Keterangan": ket,
-        "Arah": arah,
-        "Target_Min": tmin,
-        "Target_Max": tmax,
-        "Tahun": tahun_input
-    }])
-
-    if os.path.exists(file_input):
-        old = pd.read_csv(file_input)
-        saved = pd.concat([old, new], ignore_index=True)
-    else:
-        saved = new
-
-    saved.to_csv(file_input, index=False)
-    st.success(f"Indikator berhasil ditambahkan ke tahun {tahun_input}!")
-
-    st.rerun()  # << FIX PENTING
 
 # ============================================================
 #  DELETE & CLEAR DATA TAHUN INI (POSITION FIXED)
@@ -465,6 +466,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
