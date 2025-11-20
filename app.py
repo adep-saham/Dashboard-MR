@@ -342,9 +342,11 @@ def highlight(s):
             c.append(f"background-color:{COLOR_GREY}")
     return c
 
+st.subheader("📋 Data (Colored)")
+
 if len(df) > 0:
     styled = df.style.apply(highlight, axis=1)
-    st.table(styled)
+    st.markdown(styled.to_html(), unsafe_allow_html=True)
 else:
     st.info("Belum ada data.")
 
@@ -425,3 +427,4 @@ if len(f) > 0:
         color_continuous_scale=[COLOR_RED, COLOR_GREY, COLOR_GREEN]
     )
     st.plotly_chart(fig3, use_container_width=True)
+
