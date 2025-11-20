@@ -52,23 +52,36 @@ def init_data():
 # ------------------------------------------------------------
 #  STATUS LOGIC
 # ------------------------------------------------------------
-def hitung_status(row):
-    arah = row.get("Arah", "Higher is Better")
-    try: real = float(row["Realisasi"])
-    except: return "N/A"
 
-    if arah == "Higher is Better":
-        return "Hijau" if real >= float(row["Target"]) else "Merah"
-    if arah == "Lower is Better":
-        return "Hijau" if real <= float(row["Target"]) else "Merah"
-    if arah == "Range":
+def hitung_status(row):
+    try:
+        real = float(row["Realisasi"])
+        target = float(row["Target"])
+    except:
+        return "N/A"
+
+    # Normalisasi arah (capitals, spasi)
+    arah = str(row.get("Arah", "")).strip().lower()
+
+    # -------- Higher is Better --------
+    if arah == "higher is better".lower():
+        return "Hijau" if real >= target else "Merah"
+
+    # -------- Lower is Better --------
+    if arah == "lower is better".lower():
+        return "Hijau" if real <= target else "Merah"
+
+    # -------- Range Mode --------
+    if arah == "range":
         try:
-            mn = float(row["Target_Min"])
-            mx = float(row["Target_Max"])
-            return "Hijau" if mn <= real <= mx else "Merah"
+            tmin = float(row["Target_Min"])
+            tmax = float(row["Target_Max"])
+            return "Hijau" if tmin <= real <= tmax else "Merah"
         except:
             return "N/A"
+
     return "N/A"
+
 
 
 # ------------------------------------------------------------
@@ -294,6 +307,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
