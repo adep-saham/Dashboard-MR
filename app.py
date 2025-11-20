@@ -236,51 +236,51 @@ if len(df) > 0:
     st.sidebar.metric("N/A", na)
 
 # ============================================================
-#  EDIT INDIKATOR (FORM EDIT TERPISAH)
+#  EDIT INDIKATOR (FORM EDIT TERPISAH) — FIXED KEYS
 # ============================================================
-st.subheader("✏️ Edit Indikator")
+st.subheader("✏️ Edit Data:")
 
 if len(df) == 0:
     st.info("Belum ada data untuk diedit.")
 else:
 
-    # ===========================
-    # PILIH DATA YANG AKAN DIEDIT
-    # ===========================
+    # Pilih indikator yang mau diedit
     pilih_edit = st.selectbox(
         "Pilih indikator untuk diedit:",
         df["Nama_Indikator"].unique(),
-        key="edit_picker"
+        key="edit_pilih_indikator"
     )
 
     data_edit = df[df["Nama_Indikator"] == pilih_edit].iloc[0]
 
-    st.markdown("### 🔧 Edit Data:")
-
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        e_jenis = st.selectbox("Jenis", ["KPI", "KRI", "KCI"], index=["KPI","KRI","KCI"].index(data_edit["Jenis"]))
-        e_kategori = st.text_input("Kategori", data_edit["Kategori"])
-        e_unit = st.text_input("Unit", data_edit["Unit"])
+        e_jenis = st.selectbox(
+            "Jenis",
+            ["KPI", "KRI", "KCI"],
+            index=["KPI","KRI","KCI"].index(data_edit["Jenis"]),
+            key="edit_jenis"
+        )
+        e_kategori = st.text_input("Kategori", data_edit["Kategori"], key="edit_kategori")
+        e_unit = st.text_input("Unit", data_edit["Unit"], key="edit_unit")
 
     with c2:
-        e_nama = st.text_input("Nama Indikator", data_edit["Nama_Indikator"])
-        e_pemilik = st.text_input("Pemilik", data_edit["Pemilik"])
-        e_tanggal = st.date_input("Tanggal", pd.to_datetime(data_edit["Tanggal"]))
+        e_nama = st.text_input("Nama Indikator", data_edit["Nama_Indikator"], key="edit_nama")
+        e_pemilik = st.text_input("Pemilik", data_edit["Pemilik"], key="edit_pemilik")
+        e_tanggal = st.date_input("Tanggal", pd.to_datetime(data_edit["Tanggal"]), key="edit_tanggal")
 
     with c3:
-        e_target = st.number_input("Target", value=float(data_edit["Target"]))
-        e_realisasi = st.number_input("Realisasi", value=float(data_edit["Realisasi"]))
-        e_satuan = st.text_input("Satuan", data_edit["Satuan"])
+        e_target = st.number_input("Target", value=float(data_edit["Target"]), key="edit_target")
+        e_realisasi = st.number_input("Realisasi", value=float(data_edit["Realisasi"]), key="edit_realisasi")
+        e_satuan = st.text_input("Satuan", data_edit["Satuan"], key="edit_satuan")
 
-    # -------------------------------------------------------
-    # ARAH PENILAIAN (EDIT)
-    # -------------------------------------------------------
+    # Arah Penilaian
     e_arah = st.selectbox(
         "Arah Penilaian",
         ["Higher is Better", "Lower is Better", "Range"],
-        index=["Higher is Better", "Lower is Better", "Range"].index(data_edit["Arah"])
+        index=["Higher is Better", "Lower is Better", "Range"].index(data_edit["Arah"]),
+        key="edit_arah"
     )
 
     e_min, e_max = None, None
@@ -288,18 +288,23 @@ else:
     if e_arah == "Range":
         r1, r2 = st.columns(2)
         with r1:
-            e_min = st.number_input("Target Minimal", value=float(data_edit["Target_Min"]) if pd.notna(data_edit["Target_Min"]) else 0.0)
+            e_min = st.number_input(
+                "Target Minimal",
+                value=float(data_edit["Target_Min"]) if pd.notna(data_edit["Target_Min"]) else 0.0,
+                key="edit_tmin"
+            )
         with r2:
-            e_max = st.number_input("Target Maksimal", value=float(data_edit["Target_Max"]) if pd.notna(data_edit["Target_Max"]) else 0.0)
+            e_max = st.number_input(
+                "Target Maksimal",
+                value=float(data_edit["Target_Max"]) if pd.notna(data_edit["Target_Max"]) else 0.0,
+                key="edit_tmax"
+            )
 
-    e_ket = st.text_area("Keterangan", data_edit["Keterangan"])
+    e_ket = st.text_area("Keterangan", data_edit["Keterangan"], key="edit_keterangan")
 
-    # =======================
-    #  SIMPAN PERUBAHAN
-    # =======================
-    if st.button("💾 Simpan Perubahan"):
+    # Tombol Simpan
+    if st.button("💾 Simpan Perubahan", key="edit_simpan"):
 
-        # Update baris pada dataframe
         idx = df.index[df["Nama_Indikator"] == pilih_edit][0]
 
         df.loc[idx, "Jenis"] = e_jenis
@@ -394,6 +399,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
