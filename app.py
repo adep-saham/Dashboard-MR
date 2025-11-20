@@ -87,6 +87,12 @@ if os.path.exists(FILE_NAME):
 else:
     df = init_data()
 
+# Hapus baris-baris sampah / kosong
+df = df[df["Nama_Indikator"].notna()]
+df = df[df["Nama_Indikator"] != "nan"]
+df = df[df["Nama_Indikator"] != ""]
+df = df[df["Nama_Indikator"].str.strip() != ""]
+
 # ------------------------------------------------------------
 #  INPUT FORM (VERSION FIXED)
 # ------------------------------------------------------------
@@ -288,6 +294,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
