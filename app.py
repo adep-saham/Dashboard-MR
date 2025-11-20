@@ -221,37 +221,6 @@ if submitted:
 
 df = st.session_state.df_indikator.copy()
 
-# -------------------- FUNGSI DELETE & CLEAR --------------------
-
-st.subheader("🧹 Hapus / Bersihkan Data")
-
-col_del, col_clear = st.columns(2)
-
-with col_del:
-    # Pilih baris untuk dihapus
-    if len(df) > 0:
-        row_to_delete = st.selectbox(
-            "Pilih indikator yang ingin dihapus:",
-            df["Nama_Indikator"] + " | " + df["Kategori"] + " | " + df["Unit"]
-        )
-
-        if st.button("❌ Hapus Indikator Ini"):
-            # Cari index berdasarkan pilihan
-            idx = df.index[
-                (df["Nama_Indikator"] + " | " + df["Kategori"] + " | " + df["Unit"]) == row_to_delete
-            ][0]
-
-            st.session_state.df_indikator = df.drop(idx).reset_index(drop=True)
-            st.success(f"Indikator '{row_to_delete}' berhasil dihapus. Klik Save ke Google Drive untuk menyimpan.")
-    else:
-        st.info("Tidak ada data untuk dihapus.")
-
-with col_clear:
-    if st.button("🗑️ Clear Semua Data"):
-        st.session_state.df_indikator = df.iloc[0:0]  # membuat dataframe kosong
-        st.warning("Semua indikator telah DIHAPUS. Klik Save ke Google Drive untuk menyimpan.")
-
-
 # -------------------- TOMBOL SIMPAN / RELOAD DARI DRIVE --------------------
 col_save, col_reload = st.columns(2)
 
@@ -304,6 +273,36 @@ st.dataframe(
     df.sort_values(["Jenis", "Kategori", "Unit", "Nama_Indikator"]),
     use_container_width=True,
 )
+
+# -------------------- FUNGSI DELETE & CLEAR --------------------
+
+st.subheader("🧹 Hapus / Bersihkan Data")
+
+col_del, col_clear = st.columns(2)
+
+with col_del:
+    # Pilih baris untuk dihapus
+    if len(df) > 0:
+        row_to_delete = st.selectbox(
+            "Pilih indikator yang ingin dihapus:",
+            df["Nama_Indikator"] + " | " + df["Kategori"] + " | " + df["Unit"]
+        )
+
+        if st.button("❌ Hapus Indikator Ini"):
+            # Cari index berdasarkan pilihan
+            idx = df.index[
+                (df["Nama_Indikator"] + " | " + df["Kategori"] + " | " + df["Unit"]) == row_to_delete
+            ][0]
+
+            st.session_state.df_indikator = df.drop(idx).reset_index(drop=True)
+            st.success(f"Indikator '{row_to_delete}' berhasil dihapus. Klik Save ke Google Drive untuk menyimpan.")
+    else:
+        st.info("Tidak ada data untuk dihapus.")
+
+with col_clear:
+    if st.button("🗑️ Clear Semua Data"):
+        st.session_state.df_indikator = df.iloc[0:0]  # membuat dataframe kosong
+        st.warning("Semua indikator telah DIHAPUS. Klik Save ke Google Drive untuk menyimpan.")
 
 # -------------------- FILTER DI SIDEBAR UNTUK DASHBOARD --------------------
 st.sidebar.header("🔍 Filter Dashboard")
@@ -476,4 +475,5 @@ Data disimpan sebagai `kpi_kri_kci_data.csv` di folder Google Drive
 yang ID-nya diisi di `drive_folder_id` pada secrets Streamlit Cloud.
 """
 )
+
 
