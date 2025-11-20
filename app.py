@@ -6,6 +6,8 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
+import altair as alt
+
 
 # ------------------------------------------------------------
 #  THEME COLORS
@@ -302,26 +304,43 @@ if st.button("💾 Simpan Perubahan Tabel"):
     st.success("Perubahan pada tabel berhasil disimpan!")
     st.rerun()
 
-st.markdown("## 📈 Combo Chart Profesional — Target vs Realisasi")
+if df_trend.empty:
+    st.warning("Tidak ada data untuk grafik ini.")
+else:
+    # grafik di sini
 
-df_trend = df.copy()
-df_trend["Tanggal"] = pd.to_datetime(df_trend["Tanggal"])
 
-base = alt.Chart(df_trend).encode(
-    x=alt.X("Tanggal:T", title="Tanggal")
-)
+    st.markdown("## 📈 Combo Chart Profesional — Target vs Realisasi")
 
-bar = base.mark_bar(color="#2E86C1", opacity=0.6).encode(
-    y=alt.Y("Realisasi:Q", title="Realisasi"),
-    tooltip=["Nama_Indikator", "Realisasi", "Target", "Tanggal"]
-)
+if len(df) == 0:
+    st.info("Belum ada data untuk grafik ini.")
+else:
+    df_trend = df.copy()
+    df_trend["Tanggal"] = pd.to_datetime(df_trend["Tanggal"], errors="coerce")
+    df_trend = df_trend.dropna(subset=["Tanggal"])
 
-line = base.mark_line(color="#E74C3C", point=True).encode(
-    y=alt.Y("Target:Q", title="Target")
-)
+    base = alt.Chart(df_trend).encode(
+        x=alt.X("Tanggal:T", title="Tanggal")
+    )
 
-combo_chart = (bar + line).properties(height=350)
-st.altair_chart(combo_chart, use_container_width=True)
+    bar = base.mark_bar(
+        color="#3498DB",
+        opacity=0.45
+    ).encode(
+        y=alt.Y("Realisasi:Q", title="Realisasi"),
+        tooltip=["Nama_Indikator","Realisasi","Target","Tanggal"]
+    )
+
+    line = base.mark_line(
+        color="#E74C3C",
+        point=True,
+        strokeWidth=2
+    ).encode(
+        y=alt.Y("Target:Q", title="Target")
+    )
+
+    st.altair_chart((bar + line).properties(height=350), use_container_width=True)
+
 
 
 
