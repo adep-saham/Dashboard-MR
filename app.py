@@ -20,37 +20,75 @@ COLOR_TEAL  = "#007E6D"
 
 st.set_page_config(page_title="Dashboard KPI/KRI/KCI", layout="wide")
 
-# ------------------------------------------------------------
-#  CARD CSS (MEWAH)
-# ------------------------------------------------------------
-st.markdown("""
-<style>
+# ============ CARD KPI MEWAH 3 KOLOM (FIXED) =================
 
-.card {
-    background: white;
-    padding: 18px 20px 18px 20px;
-    border-radius: 14px;
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.10);
-    margin-bottom: 20px;
-    border: 1px solid rgba(0,0,0,0.05);
-}
+st.markdown("## 🌟 KPI Dashboard")
 
-.badge {
-    display: inline-block;
-    padding: 5px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: white;
-}
+df_bar = df.copy()
+df_bar["Skor_Normal"] = (df_bar["Realisasi"] / df_bar["Target"]) * 100
+df_bar["Skor_Normal"] = df_bar["Skor_Normal"].round(2)
 
-.badge-green { background-color: #27AE60 !important; }
-.badge-yellow { background-color: #F1C40F !important; color: black !important; }
-.badge-red { background-color: #E74C3C !important; }
+def get_color(score):
+    if score >= 100:
+        return "#27AE60"   # hijau
+    elif score >= 90:
+        return "#F1C40F"   # kuning
+    else:
+        return "#E74C3C"   # merah
 
-</style>
-""", unsafe_allow_html=True)
+df_bar["Color"] = df_bar["Skor_Normal"].apply(get_color)
 
+i = 0
+cols = st.columns(3)
+
+for _, row in df_bar.iterrows():
+
+    with cols[i % 3]:
+
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
+
+        # Judul
+        st.markdown(
+            f"<h4 style='margin-bottom:4px'><b>{row['Nama_Indikator']}</b></h4>",
+            unsafe_allow_html=True
+        )
+        st.markdown(
+            f"<span style='font-size:12px; color:gray;'>Unit: {row['Unit']} | "
+            f"Kategori: {row['Kategori']}</span>",
+            unsafe_allow_html=True
+        )
+
+        # Badge
+        st.markdown(
+            f"<span style='background:{row['Color']}; "
+            f"padding:6px 12px; border-radius:8px; color:white; "
+            f"font-weight:600; font-size:12px;'>"
+            f"Capaian: {row['Skor_Normal']}%</span>",
+            unsafe_allow_html=True
+        )
+
+        # Grafik mini
+        df_mini = pd.DataFrame({
+            "Jenis": ["Realisasi", "Target"],
+            "Nilai": [row["Realisasi"], row["Target"]],
+            "Color": [row["Color"], "#BDC3C7"]
+        })
+
+        chart = alt.Chart(df_mini).mark_bar(size=12).encode(
+            x=alt.X("Nilai:Q", axis=alt.Axis(format="~s")),
+            y=alt.Y("Jenis:N", sort=["Realisasi", "Target"],
+                    axis=alt.Axis(labelPadding=8)),
+            color=alt.Color("Color:N", scale=None)
+        ).properties(
+            height=75,
+            width=260
+        )
+
+        st.altair_chart(chart, use_container_width=False)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    i += 1
 
 st.markdown(f"""
 <style>
@@ -409,6 +447,7 @@ for _, row in df_bar.iterrows():
         st.markdown("</div>", unsafe_allow_html=True)
 
     i += 1
+
 
 
 
