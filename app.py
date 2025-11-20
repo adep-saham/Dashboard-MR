@@ -13,14 +13,17 @@ st.set_page_config(
 )
 
 st.title("📊 Dashboard KPI, KRI, dan KCI")
-st.caption("Data indikator tersimpan di Google Drive (file CSV).")
+st.caption("Data indikator tersimpan sebagai CSV di Google Drive melalui Service Account.")
 
 # -------------------- KONFIGURASI GOOGLE DRIVE --------------------
 FILE_NAME = "kpi_kri_kci_data.csv"
 
 @st.cache_resource
 def get_drive_service():
-    """Inisialisasi Drive API dari st.secrets service account."""
+    """
+    Inisialisasi Drive API dari st.secrets["gcp_service_account"].
+    Pastikan secrets sudah diisi di Streamlit Cloud.
+    """
     creds_info = st.secrets["gcp_service_account"]
     folder_id = creds_info.get("drive_folder_id", None)
     if folder_id is None:
@@ -116,7 +119,7 @@ def drive_upload_df(service, folder_id, name, df):
         ).execute()
         return created.get("id")
 
-# -------------------- FUNGSI LOGIKA KPI/KRI/KCI --------------------
+# -------------------- LOGIKA KPI/KRI/KCI --------------------
 def hitung_status(row):
     """Hitung status Hijau/Merah/N/A berdasarkan jenis indikator."""
     try:
@@ -128,8 +131,10 @@ def hitung_status(row):
     jenis = str(row["Jenis"]).upper()
 
     if jenis in ["KPI", "KCI"]:
+        # KPI/KCI: makin tinggi makin baik
         return "Hijau" if real >= target else "Merah"
     elif jenis == "KRI":
+        # KRI: makin rendah makin baik
         return "Hijau" if real <= target else "Merah"
     else:
         return "N/A"
@@ -137,7 +142,7 @@ def hitung_status(row):
 def safe_pct(part, whole):
     return 0 if whole == 0 else round(part / whole * 100, 1)
 
-# -------------------- LOAD DATA DARI DRIVE (SEKALI DI AWAL) --------------------
+# -------------------- LOAD DATA DARI DRIVE (PERTAMA KALI) --------------------
 if "df_indikator" not in st.session_state:
     try:
         drive_service, DRIVE_FOLDER_ID = get_drive_service()
@@ -147,7 +152,7 @@ if "df_indikator" not in st.session_state:
             st.success("✅ Data indikator di-load dari Google Drive.")
         else:
             st.session_state.df_indikator = init_data()
-            st.info("ℹ️ Belum ada file di Google Drive. Menggunakan data contoh.")
+            st.info("ℹ️ Belum ada file di Google Drive. Menggunakan data contoh awal.")
     except Exception as e:
         st.session_state.df_indikator = init_data()
         st.error(f"Gagal akses Google Drive, menggunakan data contoh. Detail: {e}")
@@ -157,18 +162,18 @@ st.sidebar.header("⚙️ Struktur Data")
 
 st.sidebar.markdown(
     """
-**Kolom yang dipakai:**
+**Kolom yang digunakan:**
 
 - `Jenis` → KPI / KRI / KCI  
 - `Nama_Indikator`  
-- `Kategori`  
-- `Unit`  
-- `Pemilik`  
-- `Tanggal` → YYYY-MM-DD  
-- `Target` (angka)  
-- `Realisasi` (angka)  
-- `Satuan`  
-- `Keterangan`
+- `Kategori` (Keuangan, HSSE, Kepatuhan, Operasi, dll.)  
+- `Unit` (HO, UBPP, UBPN, dsb.)  
+- `Pemilik` (PIC indikator)  
+- `Tanggal` → format YYYY-MM-DD  
+- `Target` → angka  
+- `Realisasi` → angka  
+- `Satuan` → %, kasus, unit, dll.  
+- `Keterangan` → catatan bebas
 """
 )
 
@@ -181,7 +186,7 @@ Edit atau tambahkan baris langsung di tabel di bawah:
 
 - Klik sel untuk mengubah isi.
 - Klik **+** di baris paling bawah untuk menambah indikator.
-- `Jenis` hanya isi `KPI`, `KRI`, atau `KCI`.
+- Kolom `Jenis` isi: `KPI`, `KRI`, atau `KCI`.
 """
 )
 
@@ -195,7 +200,7 @@ edited_df = st.data_editor(
 st.session_state.df_indikator = edited_df.copy()
 df = st.session_state.df_indikator.copy()
 
-# -------------------- TOMBOL SIMPAN / LOAD DARI DRIVE --------------------
+# -------------------- TOMBOL SIMPAN / RELOAD DARI DRIVE --------------------
 col_save, col_reload = st.columns(2)
 
 with col_save:
@@ -203,7 +208,7 @@ with col_save:
         try:
             drive_service, DRIVE_FOLDER_ID = get_drive_service()
             drive_upload_df(drive_service, DRIVE_FOLDER_ID, FILE_NAME, df)
-            st.success("Data berhasil disimpan / di-update di Google Drive.")
+            st.success("✅ Data berhasil disimpan / di-update di Google Drive.")
         except Exception as e:
             st.error(f"Gagal menyimpan ke Google Drive: {e}")
 
@@ -214,7 +219,7 @@ with col_reload:
             df_drive = drive_download_df(drive_service, DRIVE_FOLDER_ID, FILE_NAME)
             if df_drive is not None:
                 st.session_state.df_indikator = df_drive
-                st.success("Data berhasil di-load ulang dari Google Drive.")
+                st.success("✅ Data berhasil di-load ulang dari Google Drive.")
             else:
                 st.warning("File di Google Drive belum ada.")
         except Exception as e:
@@ -225,6 +230,7 @@ if df.empty:
     st.warning("Belum ada data indikator. Tambahkan minimal satu baris di tabel di atas.")
     st.stop()
 
+# Nama kolom jadi konsisten (tanpa spasi)
 df.columns = [c.strip().replace(" ", "_") for c in df.columns]
 
 required_cols = ["Jenis", "Nama_Indikator", "Kategori", "Unit",
@@ -403,8 +409,9 @@ st.markdown(
 ---
 ℹ️ **Logika warna:**
 - **KPI & KCI** → Hijau kalau `Realisasi ≥ Target`  
-- **KRI** → Hijau kalau `Realisasi ≤ Target`
+- **KRI** → Hijau kalau `Realisasi ≤ Target`  
 
-Datanya disimpan sebagai **CSV di Google Drive** dengan nama `kpi_kri_kci_data.csv` di folder yang ID-nya kamu set di `drive_folder_id`.
+Data disimpan sebagai `kpi_kri_kci_data.csv` di folder Google Drive
+yang ID-nya diisi di `drive_folder_id` pada secrets Streamlit Cloud.
 """
 )
