@@ -312,8 +312,6 @@ if st.button("💾 Simpan Perubahan Tabel"):
     st.success("Perubahan pada tabel berhasil disimpan!")
     st.rerun()
 
-
-
 # ============================================================
 #  📈 Combo Chart Profesional — Target vs Realisasi
 # ============================================================
@@ -374,6 +372,97 @@ for idx, (_, row) in enumerate(df_bar.iterrows()):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+# =========================
+#   FUNGSI CHART MINI
+# =========================
+def tampilkan_chart(row):
+
+    # Judul Indikator (diperkecil ukuran font)
+    st.markdown(
+        f"<div style='font-size:14px; font-weight:600;'>{row['Nama_Indikator']}</div>",
+        unsafe_allow_html=True
+    )
+
+    # Unit & Kategori
+    st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
+
+    # Hitung capaian
+    target = float(row['Target'])
+    real = float(row['Realisasi'])
+    capai = (real / target * 100) if target > 0 else 0
+
+    # Tampilkan capaian
+    st.markdown(
+        f"<span style='color:#d9534f; font-weight:bold;'>Capaian: {capai:.2f}%</span>",
+        unsafe_allow_html=True
+    )
+
+    # ======================
+    #   MINI BAR CHART
+    # ======================
+    fig = go.Figure()
+
+    # Realsiasi
+    fig.add_trace(go.Bar(
+        x=[real],
+        y=["Realisasi"],
+        orientation="h",
+        marker=dict(color="#ff6b6b"),
+        width=0.35
+    ))
+
+    # Target
+    fig.add_trace(go.Bar(
+        x=[target],
+        y=["Target"],
+        orientation="h",
+        marker=dict(color="#9aa0a6"),
+        width=0.35
+    ))
+
+    fig.update_layout(
+        height=120,
+        showlegend=False,
+        margin=dict(l=0, r=0, t=5, b=0),
+        xaxis=dict(showgrid=True, zeroline=False),
+        yaxis=dict(showgrid=False)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+
+# =====================================================
+#  DASHBOARD PER JENIS (KPI / KRI / KCI)
+# =====================================================
+
+st.markdown("## 📊 KPI Dashboard")
+
+# Pisahkan data berdasarkan jenis indikator
+df_kpi = df[df["Jenis"] == "KPI"]
+df_kri = df[df["Jenis"] == "KRI"]
+df_kci = df[df["Jenis"] == "KCI"]
+
+# 🔹 Tampilkan fungsi untuk setiap section
+def tampilkan_section(title, data):
+    st.markdown(f"### {title}")
+
+    if len(data) == 0:
+        st.info("Tidak ada data untuk ditampilkan.")
+        return
+
+    col1, col2, col3, col4 = st.columns(4, gap="large")
+    cols = [col1, col2, col3, col4]
+
+    for idx, (_, row) in enumerate(data.iterrows()):
+        with cols[idx % 4]:
+            tampilkan_chart(row)
+
+# Panggil section-nya
+tampilkan_section("🔥 KPI", df_kpi)
+tampilkan_section("⚠️ KRI", df_kri)
+tampilkan_section("🔐 KCI", df_kci)
 
 
 
