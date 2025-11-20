@@ -410,7 +410,7 @@ if len(f) > 0:
     st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("📈 Tren Target vs Realisasi")
-    pick = st.selectbox("Pilih indikator", f["Nama_Indikator"].unique())
+    pick = st.selectbox("Pilih indikator", f["Nama_Indikator"].unique(), key="trend_selector")
 
     d2 = f[f["Nama_Indikator"] == pick].sort_values("Tanggal")
     long = d2.melt(
@@ -449,5 +449,6 @@ if len(f) > 0:
         color_continuous_scale=[COLOR_RED, COLOR_GREY, COLOR_GREEN]
     )
     st.plotly_chart(fig3, use_container_width=True)
+
 
 
