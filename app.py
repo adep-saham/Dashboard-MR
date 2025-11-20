@@ -315,69 +315,65 @@ if st.button("💾 Simpan Perubahan Tabel"):
 # ============================================================
 #  📈 Combo Chart Profesional — Target vs Realisasi
 # ============================================================
-st.markdown("## 🌟 KPI Dashboard ")
+st.markdown("## 📊 KPI Dashboard")
 
+# Ambil data indikator
 df_bar = df.copy()
-df_bar["Skor_Normal"] = (df_bar["Realisasi"] / df_bar["Target"]) * 100
-df_bar["Skor_Normal"] = df_bar["Skor_Normal"].round(2)
 
-def get_color(score):
-    if score >= 100:
-        return "green"
-    elif score >= 90:
-        return "yellow"
-    else:
-        return "red"
+# Urutkan supaya output rapi
+df_bar = df_bar.sort_values("Nama_Indikator")
 
-df_bar["Color"] = df_bar["Skor_Normal"].apply(get_color)
+# Buat 4 kolom
+col1, col2, col3, col4 = st.columns(4, gap="large")
 
-cols = st.columns(3)
-i = 0
+cols = [col1, col2, col3, col4]
 
-for _, row in df_bar.iterrows():
+# Loop semua indikator
+for idx, (_, row) in enumerate(df_bar.iterrows()):
+    col = cols[idx % 4]  # setiap 4 pindah baris ke bawah
 
-    badge_class = {
-        "green": "badge badge-green",
-        "yellow": "badge badge-yellow",
-        "red": "badge badge-red"
-    }[row["Color"]]
+    with col:
+        st.markdown(f"### **{row['Nama_Indikator']}**")
+        st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
 
-    with cols[i % 3]:
+        target = row['Target']
+        real = row['Realisasi']
+        capai = (real / target * 100) if target > 0 else 0
 
-        st.markdown("<div class='card'>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <span style='color:#d9534f; font-weight:bold;'>Capaian: {capai:.2f}%</span>
+        """, unsafe_allow_html=True)
 
-        st.markdown(f"<h4><b>{row['Nama_Indikator']}</b></h4>", unsafe_allow_html=True)
-        st.markdown(f"<small>Unit: {row['Unit']} | Kategori: {row['Kategori']}</small>", unsafe_allow_html=True)
-        
-        # Badge capaian
-        st.markdown(
-            f"<span class='{badge_class}'>Capaian: {row['Skor_Normal']}%</span>",
-            unsafe_allow_html=True
+        # --- Mini Horizontal Bar ---
+        fig = go.Figure()
+
+        fig.add_trace(go.Bar(
+            x=[real],
+            y=["Realisasi"],
+            orientation='h',
+            marker=dict(color="#ff6b6b"),
+            width=0.4
+        ))
+
+        fig.add_trace(go.Bar(
+            x=[target],
+            y=["Target"],
+            orientation='h',
+            marker=dict(color="#9aa0a6"),
+            width=0.4
+        ))
+
+        fig.update_layout(
+            height=130,
+            showlegend=False,
+            margin=dict(l=0, r=0, t=10, b=0),
+            xaxis=dict(showgrid=True, zeroline=False),
+            yaxis=dict(showgrid=False)
         )
-        st.write("")  # space
 
-        # Grafik mini
-        mini_df = pd.DataFrame({
-            "Jenis": ["Realisasi", "Target"],
-            "Nilai": [row["Realisasi"], row["Target"]],
-            "Color": [
-                {"green": "#27AE60", "yellow": "#F1C40F", "red": "#E74C3C"}[row["Color"]],
-                "#BDC3C7"
-            ]
-        })
+        st.plotly_chart(fig, use_container_width=True)
 
-        chart = alt.Chart(mini_df).mark_bar(size=12).encode(
-            x=alt.X("Nilai:Q", title="", axis=alt.Axis(format="~s")),
-            y=alt.Y("Jenis:N", title="", sort=["Realisasi", "Target"],
-                    axis=alt.Axis(labelPadding=10)),
-            color=alt.Color("Color:N", scale=None)
-        ).properties(height=80, width=260)
 
-        st.altair_chart(chart, use_container_width=False)
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    i += 1
 
 
 
