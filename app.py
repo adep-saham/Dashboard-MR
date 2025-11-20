@@ -107,40 +107,46 @@ with st.form("form_input", clear_on_submit=False):
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        jenis    = st.selectbox("Jenis", ["KPI", "KRI", "KCI"], key="jenis_input")
-        kategori = st.text_input("Kategori", key="kategori_input")
-        unit     = st.text_input("Unit", key="unit_input")
+        jenis    = st.selectbox("Jenis", ["KPI", "KRI", "KCI"])
+        kategori = st.text_input("Kategori")
+        unit     = st.text_input("Unit")
 
     with c2:
-        nama    = st.text_input("Nama Indikator", key="nama_input")
-        pemilik = st.text_input("Pemilik", key="pemilik_input")
-        tanggal = st.date_input("Tanggal", key="tanggal_input")
+        nama     = st.text_input("Nama Indikator")
+        pemilik  = st.text_input("Pemilik")
+        tanggal  = st.date_input("Tanggal")
 
     with c3:
-        target    = st.number_input("Target", 0.0, key="target_input")
-        realisasi = st.number_input("Realisasi", 0.0, key="realisasi_input")
-        satuan    = st.text_input("Satuan", key="satuan_input")
+        target    = st.number_input("Target", 0.0)
+        realisasi = st.number_input("Realisasi", 0.0)
+        satuan    = st.text_input("Satuan")
 
-    arah = st.selectbox("Arah Penilaian", [
-        "Higher is Better", "Lower is Better", "Range"
-    ], key="arah_input")
+    # ---------------- ARAH PENILAIAN ----------------
+    arah = st.selectbox(
+        "Arah Penilaian",
+        ["Higher is Better", "Lower is Better", "Range"]
+    )
 
+    # ---------------- RANGE MIN MAX ----------------
     tmin = None
     tmax = None
 
     if arah == "Range":
         st.markdown("### 🎯 Pengaturan Range Target")
-        cmin, cmax = st.columns(2)
 
-        with cmin:
-            tmin = st.number_input("Target Minimal", value=0.0, step=1.0, key="tmin_input")
+        col_min, col_max = st.columns(2)
+        with col_min:
+            tmin = st.number_input("Target Minimal", value=0.0, step=1.0)
 
-        with cmax:
-            tmax = st.number_input("Target Maksimal", value=0.0, step=1.0, key="tmax_input")
+        with col_max:
+            tmax = st.number_input("Target Maksimal", value=0.0, step=1.0)
 
-    ket = st.text_area("Keterangan", key="ket_input")
+    # ---------------- Keterangan ----------------
+    ket = st.text_area("Keterangan")
 
+    # ---------------- SUBMIT BUTTON ----------------
     submit = st.form_submit_button("➕ Tambah Indikator")
+
 
 # Save input
 if submit:
@@ -355,3 +361,4 @@ if len(df) > 0:
         color_continuous_scale=[COLOR_RED, COLOR_GREY, COLOR_GREEN]
     )
     st.plotly_chart(fig3, use_container_width=True)
+
