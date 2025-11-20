@@ -163,7 +163,7 @@ if st.button("➕ Tambah Indikator"):
     st.experimental_rerun()
 
 # ============================================================
-#  DELETE & CLEAR DATA TAHUN INI
+#  DELETE & CLEAR DATA TAHUN INI (FIXED)
 # ============================================================
 st.subheader("🗑️ Hapus / Clear Data Tahun Ini")
 
@@ -176,14 +176,15 @@ else:
     with col_del1:
         pilih_hapus = st.selectbox(
             "Pilih indikator untuk dihapus:",
-            df["Nama_Indikator"].unique(),
+            df["Nama_Indikator"].dropna().unique(),
             key="hapus_indikator"
         )
+
         if st.button("Hapus Indikator Ini"):
             df_new = df[df["Nama_Indikator"] != pilih_hapus]
             df_new.to_csv(FILE_NAME, index=False)
             st.success(f"Indikator '{pilih_hapus}' berhasil dihapus.")
-            st.experimental_rerun()
+            st.rerun()
 
     # -------- CLEAR ALL DATA --------
     with col_del2:
@@ -191,8 +192,7 @@ else:
             kosong = init_data()
             kosong.to_csv(FILE_NAME, index=False)
             st.warning("SEMUA data tahun ini telah dihapus!")
-            st.experimental_rerun()
-
+            st.rerun()
 
 # ------------------------------------------------------------
 #  SIDEBAR SUMMARY
@@ -283,5 +283,6 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
