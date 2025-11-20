@@ -92,55 +92,45 @@ else:
 # ------------------------------------------------------------
 st.subheader("🧾 Input Indikator Baru")
 
-with st.form("form_input", clear_on_submit=False):
+c1, c2, c3 = st.columns(3)
 
-    col1, col2, col3 = st.columns(3)
+with c1:
+    jenis    = st.selectbox("Jenis", ["KPI", "KRI", "KCI"])
+    kategori = st.text_input("Kategori")
+    unit     = st.text_input("Unit")
 
-    with col1:
-        jenis    = st.selectbox("Jenis", ["KPI", "KRI", "KCI"], key="jenis")
-        kategori = st.text_input("Kategori", key="kategori")
-        unit     = st.text_input("Unit", key="unit")
+with c2:
+    nama     = st.text_input("Nama Indikator")
+    pemilik  = st.text_input("Pemilik")
+    tanggal  = st.date_input("Tanggal")
 
-    with col2:
-        nama     = st.text_input("Nama Indikator", key="nama")
-        pemilik  = st.text_input("Pemilik", key="pemilik")
-        tanggal  = st.date_input("Tanggal", key="tanggal")
+with c3:
+    target    = st.number_input("Target", 0.0)
+    realisasi = st.number_input("Realisasi", 0.0)
+    satuan    = st.text_input("Satuan")
 
-    with col3:
-        target    = st.number_input("Target", 0.0, key="target")
-        realisasi = st.number_input("Realisasi", 0.0, key="realisasi")
-        satuan    = st.text_input("Satuan", key="satuan")
+arah = st.selectbox(
+    "Arah Penilaian",
+    ["Higher is Better", "Lower is Better", "Range"]
+)
 
-    # -------- ARAH PENILAIAN (TRIGGER RANGE) --------
-    arah = st.selectbox(
-        "Arah Penilaian",
-        ["Higher is Better", "Lower is Better", "Range"],
-        key="arah"
-    )
+tmin, tmax = None, None
 
-    tmin, tmax = None, None
+# ----- DYNAMIC RANGE UI -----
+if arah == "Range":
+    st.markdown("### 🎯 Pengaturan Range Target")
 
-    # -------- RANGE INPUT (ONLY SHOW IF RANGE) --------
-    show_range = (arah == "Range")
+    colr1, colr2 = st.columns(2)
+    with colr1:
+        tmin = st.number_input("Target Minimal", value=0.0)
+    with colr2:
+        tmax = st.number_input("Target Maksimal", value=0.0)
 
-    if show_range:
-        st.markdown("### 🎯 Pengaturan Range Target")
+ket = st.text_area("Keterangan")
 
-        r1, r2 = st.columns(2)
-        with r1:
-            tmin = st.number_input("Target Minimal", value=0.0, step=1.0, key="tmin")
-        with r2:
-            tmax = st.number_input("Target Maksimal", value=0.0, step=1.0, key="tmax")
+# ---- SUBMIT BUTTON ----
+if st.button("➕ Tambah Indikator"):
 
-    ket = st.text_area("Keterangan", key="ket")
-
-    submit = st.form_submit_button("➕ Tambah Indikator")
-
-
-# ------------------------------------------------------------
-#  SAVE SUBMISSION
-# ------------------------------------------------------------
-if submit:
     tahun_input = tanggal.year
     file_input  = get_file_path(tahun_input)
 
@@ -168,51 +158,9 @@ if submit:
         saved = new
 
     saved.to_csv(file_input, index=False)
-
     st.success(f"Indikator berhasil ditambahkan ke tahun {tahun_input}!")
+
     st.experimental_rerun()
-
-
-# ------------------------------------------------------------
-#  RELOAD DATA
-# ------------------------------------------------------------
-if os.path.exists(FILE_NAME):
-    df = pd.read_csv(FILE_NAME)
-else:
-    df = init_data()
-
-
-# ------------------------------------------------------------
-#  STATUS COLUMN
-# ------------------------------------------------------------
-if len(df) > 0:
-    df["Tanggal"] = pd.to_datetime(df["Tanggal"], errors="coerce")
-    df["Status"]  = df.apply(hitung_status, axis=1)
-
-
-# ------------------------------------------------------------
-#  DELETE / CLEAR
-# ------------------------------------------------------------
-st.subheader("🗑️ Hapus / Clear Data Tahun Ini")
-
-del1, del2 = st.columns(2)
-
-with del1:
-    if len(df) > 0:
-        pilih = st.selectbox("Pilih indikator", df["Nama_Indikator"])
-        if st.button("Hapus"):
-            df2 = df[df["Nama_Indikator"] != pilih]
-            df2.to_csv(FILE_NAME, index=False)
-            st.success("Data terhapus.")
-            st.experimental_rerun()
-
-with del2:
-    if st.button("Clear Semua Data"):
-        empty = init_data()
-        empty.to_csv(FILE_NAME, index=False)
-        st.warning("Data tahun ini telah dikosongkan.")
-        st.experimental_rerun()
-
 
 # ------------------------------------------------------------
 #  SIDEBAR SUMMARY
@@ -303,3 +251,4 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
