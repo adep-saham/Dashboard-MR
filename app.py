@@ -235,109 +235,6 @@ if len(df) > 0:
     st.sidebar.metric("Merah", merah)
     st.sidebar.metric("N/A", na)
 
-# ============================================================
-#  ✏️ EDIT DATA (PASTI RAPIH & ANTI-ERROR)
-# ============================================================
-st.subheader("✏️ Edit Data:")
-
-if len(df) == 0:
-    st.info("Belum ada data untuk diedit.")
-else:
-
-    # --- Dropdown memilih indikator ---
-    pilih_edit = st.selectbox(
-        "Pilih indikator untuk diedit:",
-        options=df.index,
-        format_func=lambda i: f"{df.loc[i,'Nama_Indikator']} | {df.loc[i,'Kategori']} | {df.loc[i,'Unit']}",
-        key="edit_pilih"
-    )
-
-    # --- Reset form jika pilihan berubah ---
-    if "last_edit" not in st.session_state:
-        st.session_state["last_edit"] = pilih_edit
-
-    if st.session_state["last_edit"] != pilih_edit:
-        st.session_state.clear()
-        st.session_state["last_edit"] = pilih_edit
-        st.rerun()
-
-    # --- Ambil data dari baris terpilih ---
-    data_edit = df.loc[pilih_edit]
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        e_jenis = st.selectbox(
-            "Jenis",
-            ["KPI", "KRI", "KCI"],
-            index=["KPI", "KRI", "KCI"].index(data_edit["Jenis"]),
-            key="edit_jenis"
-        )
-        e_kategori = st.text_input("Kategori", data_edit["Kategori"], key="edit_kategori")
-        e_unit = st.text_input("Unit", data_edit["Unit"], key="edit_unit")
-
-    with c2:
-        e_nama = st.text_input("Nama Indikator", data_edit["Nama_Indikator"], key="edit_nama")
-        e_pemilik = st.text_input("Pemilik", data_edit["Pemilik"], key="edit_pemilik")
-        e_tanggal = st.date_input(
-            "Tanggal",
-            pd.to_datetime(data_edit["Tanggal"]),
-            key="edit_tanggal"
-        )
-
-    with c3:
-        e_target = st.number_input("Target", float(data_edit["Target"]), key="edit_target")
-        e_realisasi = st.number_input("Realisasi", float(data_edit["Realisasi"]), key="edit_realisasi")
-        e_satuan = st.text_input("Satuan", data_edit["Satuan"], key="edit_satuan")
-
-    # --- Arah Penilaian ---
-    e_arah = st.selectbox(
-        "Arah Penilaian",
-        ["Higher is Better", "Lower is Better", "Range"],
-        index=["Higher is Better", "Lower is Better", "Range"].index(data_edit["Arah"]),
-        key="edit_arah"
-    )
-
-    # --- Range Options ---
-    e_min, e_max = None, None
-    if e_arah == "Range":
-        r1, r2 = st.columns(2)
-        with r1:
-            e_min = st.number_input(
-                "Target Minimal",
-                float(data_edit["Target_Min"]) if pd.notna(data_edit["Target_Min"]) else 0.0,
-                key="edit_tmin"
-            )
-        with r2:
-            e_max = st.number_input(
-                "Target Maksimal",
-                float(data_edit["Target_Max"]) if pd.notna(data_edit["Target_Max"]) else 0.0,
-                key="edit_tmax"
-            )
-
-    e_ket = st.text_area("Keterangan", data_edit["Keterangan"], key="edit_ket")
-
-    # --- Tombol Simpan ---
-    if st.button("💾 Simpan Perubahan", key="edit_simpan"):
-
-        df.loc[pilih_edit, "Jenis"] = e_jenis
-        df.loc[pilih_edit, "Nama_Indikator"] = e_nama
-        df.loc[pilih_edit, "Kategori"] = e_kategori
-        df.loc[pilih_edit, "Unit"] = e_unit
-        df.loc[pilih_edit, "Pemilik"] = e_pemilik
-        df.loc[pilih_edit, "Tanggal"] = e_tanggal.strftime("%Y-%m-%d")
-        df.loc[pilih_edit, "Target"] = e_target
-        df.loc[pilih_edit, "Realisasi"] = e_realisasi
-        df.loc[pilih_edit, "Satuan"] = e_satuan
-        df.loc[pilih_edit, "Keterangan"] = e_ket
-        df.loc[pilih_edit, "Arah"] = e_arah
-        df.loc[pilih_edit, "Target_Min"] = e_min
-        df.loc[pilih_edit, "Target_Max"] = e_max
-
-        df.to_csv(FILE_NAME, index=False)
-        st.success("Berhasil memperbarui data!")
-        st.rerun()
-
 # ------------------------------------------------------------
 #  HTML TABLE (COLORED)
 # ------------------------------------------------------------
@@ -384,6 +281,26 @@ if len(df) > 0:
         mime="text/csv"
     )
 
+# ============================================================
+#   ✏️ EDIT LANGSUNG DI TABEL (INLINE EDIT)
+# ============================================================
+
+st.subheader("✏️ Edit Langsung di Tabel (Inline Edit)")
+
+# Tampilkan editor
+edited_df = st.data_editor(
+    df,
+    num_rows="dynamic",         # bisa tambah / delete row
+    use_container_width=True,
+    hide_index=False
+)
+
+# Tombol simpan perubahan
+if st.button("💾 Simpan Perubahan Tabel"):
+    edited_df.to_csv(FILE_NAME, index=False)
+    st.success("Perubahan pada tabel berhasil disimpan!")
+    st.rerun()
+
 
 # ------------------------------------------------------------
 #  CHARTS
@@ -410,6 +327,7 @@ if len(df) > 0:
                     markers=True,
                     color_discrete_map={"Target": COLOR_GOLD, "Realisasi": COLOR_TEAL})
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
