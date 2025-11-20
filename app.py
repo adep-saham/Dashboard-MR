@@ -115,6 +115,52 @@ if len(df) > 0:
 df["Skor_Normal"] = (df["Realisasi"].astype(float) / df["Target"].astype(float)) * 100
 df["Skor_Normal"] = df["Skor_Normal"].round(2)
 
+# ================================
+# TABEL NORMALISASI
+# ================================
+
+st.markdown("### 📊 Tabel Normalisasi Indikator")
+
+if "Skor_Normal" in df.columns:
+
+    # Tabel khusus normalisasi
+    df_norm = df[[
+        "Nama_Indikator",
+        "Kategori",
+        "Unit",
+        "Target",
+        "Realisasi",
+        "Skor_Normal",
+        "Status"
+    ]].copy()
+
+    # Format agar terlihat rapi
+    df_norm["Target"] = df_norm["Target"].astype(float).round(2)
+    df_norm["Realisasi"] = df_norm["Realisasi"].astype(float).round(2)
+    df_norm["Skor_Normal"] = df_norm["Skor_Normal"].astype(float).round(2)
+
+    # Warna berdasarkan status
+    def color_status(row):
+        if row["Status"] == "Hijau":
+            return ["background-color: #d4edda; color: #155724"] * len(row)
+        elif row["Status"] == "Merah":
+            return ["background-color: #f8d7da; color: #721c24"] * len(row)
+        return [""] * len(row)
+
+    st.dataframe(
+        df_norm.style.apply(color_status, axis=1)
+                      .format({
+                          "Target": "{:,.2f}",
+                          "Realisasi": "{:,.2f}",
+                          "Skor_Normal": "{:.2f}%"
+                      }),
+        use_container_width=True
+    )
+
+else:
+    st.info("Normalisasi belum dihitung. Pastikan df['Skor_Normal'] sudah dibuat.")
+
+
 # ------------------------------------------------------------
 #  INPUT FORM (VERSION FIXED)
 # ------------------------------------------------------------
@@ -350,6 +396,7 @@ else:
     )
 
     st.altair_chart((line_chart + target_line), use_container_width=True)
+
 
 
 
