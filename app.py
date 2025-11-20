@@ -331,24 +331,46 @@ else:
 # ============================================================
 st.subheader("📋 Data (Colored)")
 
-def highlight(s):
-    c = []
-    for v in s["Status"]:
-        if v == "Hijau":
-            c.append(f"background-color:{COLOR_GREEN}")
-        elif v == "Merah":
-            c.append(f"background-color:{COLOR_RED}")
-        else:
-            c.append(f"background-color:{COLOR_GREY}")
-    return c
-
-st.subheader("📋 Data (Colored)")
-
 if len(df) > 0:
-    styled = df.style.apply(highlight, axis=1)
-    st.markdown(styled.to_html(), unsafe_allow_html=True)
+    html = """
+    <style>
+    table {border-collapse: collapse; width: 100%;}
+    th, td {border: 1px solid #ddd; padding: 8px; text-align: left;}
+    tr:nth-child(even) {background-color: #f2f2f2;}
+    </style>
+    <table>
+        <thead>
+            <tr>
+    """
+
+    # Header
+    for col in df.columns:
+        html += f"<th>{col}</th>"
+    html += "</tr></thead><tbody>"
+
+    # Rows with color
+    for _, row in df.iterrows():
+        status = row["Status"]
+
+        if status == "Hijau":
+            bg = COLOR_GREEN
+        elif status == "Merah":
+            bg = COLOR_RED
+        else:
+            bg = COLOR_GREY
+
+        html += f"<tr style='background-color:{bg};'>"
+        for col in df.columns:
+            html += f"<td>{row[col]}</td>"
+        html += "</tr>"
+
+    html += "</tbody></table>"
+
+    st.markdown(html, unsafe_allow_html=True)
+
 else:
     st.info("Belum ada data.")
+
 
 
 # ============================================================
@@ -427,4 +449,5 @@ if len(f) > 0:
         color_continuous_scale=[COLOR_RED, COLOR_GREY, COLOR_GREEN]
     )
     st.plotly_chart(fig3, use_container_width=True)
+
 
