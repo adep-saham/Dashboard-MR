@@ -168,7 +168,7 @@ def highlight(s):
     return c
 
 if len(df)>0:
-    st.dataframe(df.style.apply(highlight,axis=1),use_container_width=True)
+    st.table(df.style.apply(highlight, axis=1))
 else:
     st.info("Belum ada data")
 
@@ -213,4 +213,5 @@ if len(f)>0:
     f["Score"]=f["Status"].map(stat_map)
     pv=f.pivot_table(index="Unit",columns="Kategori",values="Score",aggfunc="mean")
     st.plotly_chart(px.imshow(pv,text_auto=True,aspect="auto"),use_container_width=True)
+
 
