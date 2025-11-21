@@ -1,1 +1,4 @@
-Jenis, Nama_Indikator, Kategori, Unit, Pemilik, Tanggal, Target, Realisasi, Satuan, Keterangan, Arah, Target_Min, Target_Max, Tahun
+Jenis,Nama_Indikator,Kategori,Unit,Pemilik,Tanggal,Target,Realisasi,Satuan,Keterangan,Arah,Target_Min,Target_Max,Tahun
+KPI,,,,,,0,0,%,,Higher is Better,,,2025
+KRI,,,,,,0,0,%,,Lower is Better,,,2025
+KCI,,,,,,0,0,%,,Lower is Better,,,2025
