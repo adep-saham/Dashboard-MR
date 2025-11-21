@@ -128,7 +128,26 @@ def add_row(row_dict):
 
 
 def delete_row(idx):
-    sheet.delete_rows(idx + 2)  # offset header
+    """
+    Hapus baris berdasarkan index DataFrame,
+    aman dari error JSON dan aman dari out-of-range.
+    """
+
+    # Pastikan idx integer murni
+    idx = int(idx)
+
+    # Google Sheets index (1 = header)
+    row_number = idx + 2
+
+    total = len(sheet.get_all_values())
+
+    # Jika baris tidak ada → abaikan
+    if row_number > total:
+        return
+
+    # Hapus baris dengan Google Sheets API
+    sheet.delete_rows(row_number)
+
 
 
 def clear_all():
@@ -327,6 +346,7 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
 
 
 
