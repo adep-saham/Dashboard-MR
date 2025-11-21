@@ -1,63 +1,86 @@
-###############################################################
-#  app.py – FINAL CLEAN VERSION (Year System + Range Logic FIX)
-###############################################################
-
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import os
-import altair as alt
-import plotly.graph_objects as go
-import plotly.express as px
 import gspread
 from google.oauth2.service_account import Credentials
+import plotly.graph_objects as go
 
-# ------------------------------------------------------------
-#  THEME COLORS
-# ------------------------------------------------------------
-COLOR_GREEN = "#C8F7C5"
-COLOR_RED   = "#F7C5C5"
-COLOR_GREY  = "#E0E0E0"
-COLOR_GOLD  = "#C8A951"
-COLOR_TEAL  = "#007E6D"
+# ======================================================
+# 🔧 SETUP GOOGLE SHEETS
+# ======================================================
+
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
+creds = Credentials.from_service_account_info(
+    st.secrets["google_service_account"],
+    scopes=SCOPES
+)
+
+client = gspread.authorize(creds)
+
+# GANTI DENGAN ID GOOGLE SHEETS KAMU
+SPREADSHEET_ID = "1Ro8FWl9HTCxdiqpAuFbqA4St7NNFuzHyJHKXQ4fEwps"
+SHEET_NAME = "Sheet1"
+
+sheet = client.open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
+
+# ======================================================
+# 📌 CRUD FUNCTIONS (MASTER)
+# ======================================================
+
+HEADER = [
+    "Jenis","Nama_Indikator","Kategori","Unit","Pemilik","Tanggal",
+    "Target","Realisasi","Satuan","Keterangan",
+    "Arah","Target_Min","Target_Max","Tahun"
+]
+
+def load_data():
+    """Load data dari Google Sheets"""
+    data = sheet.get_all_records()
+    df = pd.DataFrame(data)
+    return df
+
+def save_data(df: pd.DataFrame):
+    """Overwrite seluruh isi Google Sheets"""
+    sheet.clear()
+    sheet.update([df.columns.values.tolist()] + df.values.tolist())
+
+def add_row(new_row: dict):
+    """Tambah baris baru"""
+    sheet.append_row(list(new_row.values()))
+
+def delete_row(index):
+    """Delete per baris (index mulai 0 → sheet baris +2)"""
+    sheet.delete_rows(index + 2)
+
+def clear_all():
+    """Hapus semua data & tulis header"""
+    sheet.clear()
+    sheet.update([HEADER])
+
+# ======================================================
+# 🎨 UI SETUP
+# ======================================================
 
 st.set_page_config(page_title="Dashboard KPI/KRI/KCI", layout="wide")
+st.title("📊 Dashboard KPI / KRI / KCI – Google Sheets Version")
 
+# ======================================================
+# 📥 LOAD DATA
+# ======================================================
 
-st.markdown(f"""
-<style>
-.main-title {{
-    font-size: 36px;
-    font-weight: bold;
-    color: {COLOR_TEAL};
-}}
-</style>
-""", unsafe_allow_html=True)
+df = load_data()
 
-st.markdown("<div class='main-title'>📊 Dashboard KPI / KRI / KCI</div>", unsafe_allow_html=True)
+# jika kosong → buat header
+if df.empty:
+    df = pd.DataFrame(columns=HEADER)
+    save_data(df)
 
-# ------------------------------------------------------------
-#  DATA FOLDER
-# ------------------------------------------------------------
-DATA_FOLDER = "data_tahun"
-os.makedirs(DATA_FOLDER, exist_ok=True)
-
-def get_file_path(tahun):
-    return os.path.join(DATA_FOLDER, f"data_{tahun}.csv")
-
-# ------------------------------------------------------------
-#  INITIAL EMPTY DATA
-# ------------------------------------------------------------
-def init_data():
-    return pd.DataFrame(columns=[
-        "Jenis","Nama_Indikator","Kategori","Unit","Pemilik","Tanggal",
-        "Target","Realisasi","Satuan","Keterangan",
-        "Arah","Target_Min","Target_Max","Tahun"
-    ])
-
-# ------------------------------------------------------------
-#  STATUS LOGIC
-# ------------------------------------------------------------
+# ======================================================
+# 🧮 STATUS LOGIC
+# ======================================================
 
 def hitung_status(row):
     try:
@@ -66,8 +89,7 @@ def hitung_status(row):
     except:
         return "N/A"
 
-    # normalisasi
-    arah = str(row.get("Arah", "")).strip().lower()
+    arah = str(row.get("Arah","")).lower()
 
     if arah == "higher is better":
         return "Hijau" if real >= target else "Merah"
@@ -85,452 +107,149 @@ def hitung_status(row):
 
     return "N/A"
 
-# ------------------------------------------------------------
-#  SIDEBAR SELECT YEAR
-# ------------------------------------------------------------
-tahun_list = list(range(2024, 2032))
-tahun_pilih = st.sidebar.selectbox("📅 Pilih Tahun Dataset", tahun_list, index=tahun_list.index(2025))
-
-FILE_NAME = get_file_path(tahun_pilih)
-
-# ------------------------------------------------------------
-#  LOAD DATA
-# ------------------------------------------------------------
-if os.path.exists(FILE_NAME):
-    df = pd.read_csv(FILE_NAME)
-else:
-    df = init_data()
-
-# Hapus baris-baris sampah / kosong
-df = df[df["Nama_Indikator"].notna()]
-df = df[df["Nama_Indikator"] != "nan"]
-df = df[df["Nama_Indikator"] != ""]
-df = df[df["Nama_Indikator"].str.strip() != ""]
-
-# ====================================================
-# HITUNG ULANG STATUS SETELAH LOAD CSV
-# ====================================================
 if len(df) > 0:
     df["Status"] = df.apply(hitung_status, axis=1)
 
-# =====================================================
-# NORMALISASI REALISASI TERHADAP TARGET (DALAM %)
-# =====================================================
-df["Skor_Normal"] = (df["Realisasi"].astype(float) / df["Target"].astype(float)) * 100
-df["Skor_Normal"] = df["Skor_Normal"].round(2)
+# ======================================================
+# ➕ INPUT INDIKATOR BARU
+# ======================================================
 
-# ------------------------------------------------------------
-#  INPUT FORM (VERSION FIXED)
-# ------------------------------------------------------------
-st.subheader("🧾 Input Indikator Baru")
+st.subheader("➕ Tambah Indikator Baru")
 
 c1, c2, c3 = st.columns(3)
-
 with c1:
-    jenis    = st.selectbox("Jenis", ["KPI", "KRI", "KCI"])
+    jenis = st.selectbox("Jenis", ["KPI","KRI","KCI"])
     kategori = st.text_input("Kategori")
-    unit     = st.text_input("Unit")
+    unit = st.text_input("Unit")
 
 with c2:
-    nama     = st.text_input("Nama Indikator")
-    pemilik  = st.text_input("Pemilik")
-    tanggal  = st.date_input("Tanggal")
+    nama = st.text_input("Nama Indikator")
+    pemilik = st.text_input("Pemilik")
+    tanggal = st.date_input("Tanggal")
 
 with c3:
-    target    = st.number_input("Target", 0.0)
-    realisasi = st.number_input("Realisasi", 0.0)
-    satuan    = st.text_input("Satuan")
+    target = st.number_input("Target", 0.0)
+    real = st.number_input("Realisasi", 0.0)
+    satuan = st.text_input("Satuan")
 
-arah = st.selectbox(
-    "Arah Penilaian",
-    ["Higher is Better", "Lower is Better", "Range"]
-)
+arah = st.selectbox("Arah Penilaian", ["Higher is Better", "Lower is Better", "Range"])
 
 tmin, tmax = None, None
-
-# ----- DYNAMIC RANGE UI -----
 if arah == "Range":
-    st.markdown("### 🎯 Pengaturan Range Target")
-
-    colr1, colr2 = st.columns(2)
-    with colr1:
-        tmin = st.number_input("Target Minimal", value=0.0)
-    with colr2:
-        tmax = st.number_input("Target Maksimal", value=0.0)
+    col_r1, col_r2 = st.columns(2)
+    with col_r1:
+        tmin = st.number_input("Target Min", 0.0)
+    with col_r2:
+        tmax = st.number_input("Target Max", 0.0)
 
 ket = st.text_area("Keterangan")
 
-# ---- SUBMIT BUTTON ----
-if st.button("➕ Tambah Indikator"):
-
-    tahun_input = tanggal.year
-    file_input  = get_file_path(tahun_input)
-
-    new = pd.DataFrame([{
+if st.button("💾 Simpan Indikator"):
+    new_row = {
         "Jenis": jenis,
         "Nama_Indikator": nama,
         "Kategori": kategori,
         "Unit": unit,
         "Pemilik": pemilik,
-        "Tanggal": tanggal.strftime("%Y-%m-%d"),
+        "Tanggal": str(tanggal),
         "Target": target,
-        "Realisasi": realisasi,
+        "Realisasi": real,
         "Satuan": satuan,
         "Keterangan": ket,
         "Arah": arah,
         "Target_Min": tmin,
         "Target_Max": tmax,
-        "Tahun": tahun_input
-    }])
-
-    if os.path.exists(file_input):
-        old = pd.read_csv(file_input)
-        saved = pd.concat([old, new], ignore_index=True)
-    else:
-        saved = new
-
-    saved.to_csv(file_input, index=False)
-    st.success(f"Indikator berhasil ditambahkan ke tahun {tahun_input}!")
-
-    st.rerun()  # << FIX PENTING
-
-# ============================================================
-#  DELETE & CLEAR DATA TAHUN INI (POSITION FIXED)
-# ============================================================
-st.subheader("🗑️ Hapus / Clear Data Tahun Ini")
-
-if len(df) == 0:
-    st.info("Belum ada data untuk tahun ini.")
-else:
-
-    # Buat kolom: 75% untuk dropdown + delete, 25% untuk clear
-    col_del_left, col_del_right = st.columns([6, 2])
-
-    # ---------------- LEFT SIDE (Dropdown + Hapus) ----------------
-    with col_del_left:
-        pilih_hapus = st.selectbox(
-            "Pilih indikator untuk dihapus:",
-            df["Nama_Indikator"].unique(),
-            key="hapus_indikator"
-        )
-
-        if st.button("Hapus Indikator Ini"):
-            df_new = df[df["Nama_Indikator"] != pilih_hapus]
-            df_new.to_csv(FILE_NAME, index=False)
-            st.success(f"Indikator '{pilih_hapus}' berhasil dihapus.")
-            st.rerun()
-
-    # ---------------- RIGHT SIDE (CLEAR BUTTON) ----------------
-    with col_del_right:
-        st.write("")  # memberi jarak vertikal agar tombol pas di baris yang sama
-        st.write("")  # tambahan jarak
-        if st.button("🧹 Clear Semua Data Tahun Ini"):
-            kosong = init_data()
-            kosong.to_csv(FILE_NAME, index=False)
-            st.warning("SEMUA data tahun ini telah dihapus!")
-            st.rerun()
-
-
-# ------------------------------------------------------------
-#  SIDEBAR SUMMARY
-# ------------------------------------------------------------
-st.sidebar.header("📊 Ringkasan Tahun Ini")
-
-if len(df) > 0:
-    total = len(df)
-    hijau = (df["Status"] == "Hijau").sum()
-    merah = (df["Status"] == "Merah").sum()
-    na    = (df["Status"] == "N/A").sum()
-
-    st.sidebar.metric("Total", total)
-    st.sidebar.metric("Hijau", hijau)
-    st.sidebar.metric("Merah", merah)
-    st.sidebar.metric("N/A", na)
-
-# ------------------------------------------------------------
-#  HTML TABLE (COLORED)
-# ------------------------------------------------------------
-st.subheader("📋 Data (Colored)")
-
-if len(df) > 0:
-
-    html = "<table style='width:100%;border-collapse:collapse;'>"
-
-    # header
-    html += "<thead><tr>"
-    for col in df.columns:
-        html += f"<th style='border:1px solid #ccc;padding:6px;background:#eee;'>{col}</th>"
-    html += "</tr></thead><tbody>"
-
-    # rows
-    for _, row in df.iterrows():
-        status = row["Status"]
-        if status == "Hijau": bg = COLOR_GREEN
-        elif status == "Merah": bg = COLOR_RED
-        else: bg = COLOR_GREY
-
-        html += f"<tr style='background:{bg};'>"
-        for col in df.columns:
-            html += f"<td style='border:1px solid #ccc;padding:6px;'>{row[col]}</td>"
-        html += "</tr>"
-
-    html += "</tbody></table>"
-
-    st.markdown(html, unsafe_allow_html=True)
-
-
-# ------------------------------------------------------------
-#  EXPORT CSV
-# ------------------------------------------------------------
-st.subheader("📤 Export CSV Tahun Ini")
-
-if len(df) > 0:
-    csv = df.to_csv(index=False).encode()
-    st.download_button(
-        label="📥 Download CSV",
-        data=csv,
-        file_name=f"export_{tahun_pilih}.csv",
-        mime="text/csv"
-    )
-
-# ============================================================
-#   ✏️ EDIT LANGSUNG DI TABEL (INLINE EDIT)
-# ============================================================
-
-st.subheader("✏️ Edit Langsung di Tabel (Inline Edit)")
-
-# Tampilkan editor
-edited_df = st.data_editor(
-    df,
-    num_rows="dynamic",         # bisa tambah / delete row
-    use_container_width=True,
-    hide_index=False
-)
-
-# Tombol simpan perubahan
-if st.button("💾 Simpan Perubahan Tabel"):
-    edited_df.to_csv(FILE_NAME, index=False)
-    st.success("Perubahan pada tabel berhasil disimpan!")
+        "Tahun": tanggal.year
+    }
+    add_row(new_row)
+    st.success("✔ Indikator berhasil ditambahkan!")
     st.rerun()
 
+# ======================================================
+# 📋 TABEL DATA
+# ======================================================
 
+st.subheader("📋 Data Indikator")
 
-# =========================
-#   FUNGSI CHART MINI
-# =========================
-def tampilkan_chart(row):
+st.dataframe(df, use_container_width=True)
 
-    # Judul Indikator (diperkecil ukuran font)
+# ======================================================
+# ✏️ INLINE EDIT (EDIT LANGSUNG)
+# ======================================================
+
+st.subheader("✏️ Edit Tabel")
+
+edited = st.data_editor(df, num_rows="dynamic")
+
+if st.button("💾 Simpan Perubahan Table"):
+    save_data(edited)
+    st.success("Perubahan tersimpan!")
+    st.rerun()
+
+# ======================================================
+# 🗑 HAPUS INDIKATOR
+# ======================================================
+
+st.subheader("🗑 Hapus Indikator")
+
+if len(df) > 0:
+    pilih = st.selectbox("Pilih indikator:", df["Nama_Indikator"])
+
+    if st.button("Hapus Sekarang"):
+        idx = df.index[df["Nama_Indikator"] == pilih][0]
+        delete_row(idx)
+        st.success("✔ Berhasil dihapus.")
+        st.rerun()
+else:
+    st.info("Tidak ada data untuk dihapus.")
+
+# ======================================================
+# ⚠ CLEAR SEMUA DATA
+# ======================================================
+
+with st.expander("⚠ Clear Semua Data"):
+    if st.button("🧹 Hapus Semua Data"):
+        clear_all()
+        st.warning("SEMUA data telah dihapus!")
+        st.rerun()
+
+# ======================================================
+# 🔥 DASHBOARD UNTUK STATUS MERAH
+# ======================================================
+
+st.subheader("🚨 Indikator Status Merah")
+
+df_merah = df[df["Status"] == "Merah"]
+
+def mini_chart(row):
     st.markdown(
-        f"<div style='font-size:14px; font-weight:600;'>{row['Nama_Indikator']}</div>",
+        f"<b>{row['Nama_Indikator']}</b>",
         unsafe_allow_html=True
     )
 
-    # Unit & Kategori
-    st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
-
-    # Hitung capaian
-    target = float(row['Target'])
-    real = float(row['Realisasi'])
-    capai = (real / target * 100) if target > 0 else 0
-
-    # Tampilkan capaian
-    st.markdown(
-        f"<span style='color:#d9534f; font-weight:bold;'>Capaian: {capai:.2f}%</span>",
-        unsafe_allow_html=True
-    )
-
-    # ======================
-    #   MINI BAR CHART
-    # ======================
-    fig = go.Figure()
-
-    # Realsiasi
-    fig.add_trace(go.Bar(
-        x=[real],
-        y=["Realisasi"],
-        orientation="h",
-        marker=dict(color="#ff6b6b"),
-        width=0.35
-    ))
-
-    # Target
-    fig.add_trace(go.Bar(
-        x=[target],
-        y=["Target"],
-        orientation="h",
-        marker=dict(color="#9aa0a6"),
-        width=0.35
-    ))
-
-    fig.update_layout(
-        height=120,
-        showlegend=False,
-        margin=dict(l=0, r=0, t=5, b=0),
-        xaxis=dict(showgrid=True, zeroline=False),
-        yaxis=dict(showgrid=False)
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-
-# =========================
-#   FUNGSI CHART MINI
-# =========================
-def tampilkan_chart(row):
-    st.markdown(
-        f"<div style='font-size:14px; font-weight:600;'>{row['Nama_Indikator']}</div>",
-        unsafe_allow_html=True
-    )
-    st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
-
-    target = float(row['Target'])
-    real = float(row['Realisasi'])
-    capai = (real / target * 100) if target > 0 else 0
-
-    st.markdown(
-        f"<span style='color:#d9534f; font-weight:bold;'>Capaian: {capai:.2f}%</span>",
-        unsafe_allow_html=True
-    )
+    target = float(row["Target"])
+    real = float(row["Realisasi"])
 
     fig = go.Figure()
     fig.add_trace(go.Bar(x=[real], y=["Realisasi"], orientation="h",
-                         marker=dict(color="#ff6b6b"), width=0.35))
+                         marker=dict(color="#ff6b6b")))
     fig.add_trace(go.Bar(x=[target], y=["Target"], orientation="h",
-                         marker=dict(color="#9aa0a6"), width=0.35))
+                         marker=dict(color="#9aa0a6")))
 
-    fig.update_layout(
-        height=120,
-        showlegend=False,
-        margin=dict(l=0, r=0, t=5, b=0),
-        xaxis=dict(showgrid=True),
-        yaxis=dict(showgrid=False),
-    )
-
+    fig.update_layout(height=120, showlegend=False)
     st.plotly_chart(fig, use_container_width=True)
 
-# =============================
-# 🔐 Load Google Service Account dari Secrets
-# =============================
-
-creds = Credentials.from_service_account_info(
-    st.secrets["google_service_account"],
-    scopes=["https://www.googleapis.com/auth/spreadsheets"]
-)
-
-client = gspread.authorize(creds)
-sheet = client.open_by_key("1Ro8FWl9HTCxdiqpAuFbqA4St7NNFuzHyJHKXQ4fEwps").sheet1
-
-data = sheet.get_all_records()
-st.write(data)
-
-
-# =====================================================
-#  DASHBOARD: Hanya Status Merah (KPI / KRI / KCI)
-# =====================================================
-
-st.markdown("## 🚨 Indikator Status Merah Saja")
-
-# Filter merah
-df_merah = df[df["Status"] == "Merah"]
-
-# Pisahkan per jenis
-df_kpi_m = df_merah[df_merah["Jenis"] == "KPI"]
-df_kri_m = df_merah[df_merah["Jenis"] == "KRI"]
-df_kci_m = df_merah[df_merah["Jenis"] == "KCI"]
-
-
-# SECTION TEMPLATE
-def tampilkan_section(title, data):
+def tampil_section(title, data):
     st.markdown(f"### {title}")
-
     if len(data) == 0:
-        st.success("✨ Semua indikator aman (tidak ada yang merah).")
+        st.success("Tidak ada yang merah.")
         return
-
-    col1, col2, col3, col4 = st.columns(4, gap="large")
+    col1, col2, col3, col4 = st.columns(4)
     cols = [col1, col2, col3, col4]
-
-    for idx, (_, row) in enumerate(data.iterrows()):
-        with cols[idx % 4]:
-            tampilkan_chart(row)
-
-
-
-# 🔥 KPI Merah
-tampilkan_section("🔥 KPI Bermasalah (Merah)", df_kpi_m)
-
-# ⚠️ KRI Merah
-tampilkan_section("⚠️ KRI Bermasalah (Merah)", df_kri_m)
-
-# 🔐 KCI Merah
-tampilkan_section("🔐 KCI Bermasalah (Merah)", df_kci_m)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    for i, (_, r) in enumerate(data.iterrows()):
+        with cols[i % 4]:
+            mini_chart(r)
+
+tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
+tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
+tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
