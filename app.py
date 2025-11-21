@@ -20,15 +20,13 @@ creds = Credentials.from_service_account_info(
 
 client = gspread.authorize(creds)
 
-# GANTI DENGAN ID GOOGLE SHEETS KAMU
 SPREADSHEET_ID = "1Ro8FWl9HTCxdiqpAuFbqA4St7NNFuzHyJHKXQ4fEwps"
 SHEET_NAME = "Sheet1"
-
 sheet = client.open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
 
-# ============================================================
-# 🔧 CRUD FUNCTIONS UNTUK GOOGLE SHEETS
-# ============================================================
+# ======================================================
+# 🔧 HEADER + SAFETY
+# ======================================================
 
 HEADER = [
     "Jenis","Nama_Indikator","Kategori","Unit","Pemilik","Tanggal",
@@ -36,73 +34,10 @@ HEADER = [
     "Target_Min","Target_Max","Tahun"
 ]
 
-def load_data():
-    """Load data dari Google Sheets → DataFrame"""
-    data = sheet.get_all_records()
-    df = pd.DataFrame(data)
-    return df
-
-
-def save_data(df):
-    """Simpan DataFrame → Google Sheets"""
-    sheet.clear()
-    sheet.append_row(HEADER)
-    rows = df.values.tolist()
-    for r in rows:
-        sheet.append_row(r)
-
-
-def delete_row(index):
-    """Menghapus 1 baris berdasarkan index (0-based DataFrame)"""
-    # +2 karena:
-    # baris 1 = HEADER
-    # baris 2 = index 0 df
-    sheet.delete_rows(index + 2)
-
-
-def clear_all():
-    """Hapus seluruh data → hanya header yang ditinggal"""
-    sheet.clear()
-    sheet.append_row(HEADER)
-
-
-
 # ======================================================
-# 🎨 UI SETUP
+# 🧮 STATUS LOGIC (DARI AWAL DIDEFINISIKAN)
 # ======================================================
 
-st.set_page_config(page_title="Dashboard KPI/KRI/KCI", layout="wide")
-st.title("📊 Dashboard KPI / KRI / KCI – Google Sheets Version")
-
-# ======================================================
-# 📥 LOAD DATA
-# ======================================================
-
-df = load_data()
-
-# =====================================================
-# TAMBAHKAN KOLOM STATUS & SKOR NORMAL SETELAH LOAD DATA
-# =====================================================
-
-if len(df) > 0:
-
-    # pastikan numeric
-    df["Target"] = pd.to_numeric(df["Target"], errors="coerce")
-    df["Realisasi"] = pd.to_numeric(df["Realisasi"], errors="coerce")
-    df["Target_Min"] = pd.to_numeric(df.get("Target_Min"), errors="coerce")
-    df["Target_Max"] = pd.to_numeric(df.get("Target_Max"), errors="coerce")
-
-    # status
-    df["Status"] = df.apply(hitung_status, axis=1)
-
-    # skor normal (%)
-    df["Skor_Normal"] = (df["Realisasi"] / df["Target"]) * 100
-    df["Skor_Normal"] = df["Skor_Normal"].fillna(0).round(2)
-
-
-# ===========================
-#  Tambah kolom STATUS
-# ===========================
 def hitung_status(row):
     try:
         real = float(row["Realisasi"])
@@ -128,42 +63,70 @@ def hitung_status(row):
 
     return "N/A"
 
-# jika kosong → buat header
-if df.empty:
-    df = pd.DataFrame(columns=HEADER)
-    save_data(df)
-
 # ======================================================
-# 🧮 STATUS LOGIC
+# 🔧 CRUD GOOGLE SHEETS
 # ======================================================
 
-def hitung_status(row):
-    try:
-        real = float(row["Realisasi"])
-        target = float(row["Target"])
-    except:
-        return "N/A"
+def load_data():
+    data = sheet.get_all_records()
+    df = pd.DataFrame(data)
 
-    arah = str(row.get("Arah","")).lower()
+    # jika kosong → buat df kosong
+    if df.empty:
+        df = pd.DataFrame(columns=HEADER)
+        save_data(df)
 
-    if arah == "higher is better":
-        return "Hijau" if real >= target else "Merah"
+    # Tambahkan kolom yang hilang
+    for col in HEADER:
+        if col not in df.columns:
+            df[col] = ""
 
-    if arah == "lower is better":
-        return "Hijau" if real <= target else "Merah"
+    # Convert numerik
+    df["Target"] = pd.to_numeric(df["Target"], errors="coerce").fillna(0)
+    df["Realisasi"] = pd.to_numeric(df["Realisasi"], errors="coerce").fillna(0)
+    df["Target_Min"] = pd.to_numeric(df["Target_Min"], errors="coerce").fillna(0)
+    df["Target_Max"] = pd.to_numeric(df["Target_Max"], errors="coerce").fillna(0)
 
-    if arah == "range":
-        try:
-            tmin = float(row["Target_Min"])
-            tmax = float(row["Target_Max"])
-            return "Hijau" if tmin <= real <= tmax else "Merah"
-        except:
-            return "N/A"
-
-    return "N/A"
-
-if len(df) > 0:
+    # Hitung status
     df["Status"] = df.apply(hitung_status, axis=1)
+
+    # Skor Normal
+    df["Skor_Normal"] = ((df["Realisasi"] / df["Target"]) * 100).fillna(0).round(2)
+
+    return df
+
+
+def save_data(df):
+    sheet.clear()
+    sheet.append_row(HEADER)
+    rows = df.values.tolist()
+    for r in rows:
+        sheet.append_row(r)
+
+
+def add_row(row_dict):
+    """Tambahkan data 1 baris ke Sheet"""
+    sheet.append_row([row_dict[h] for h in HEADER])
+
+
+def delete_row(idx):
+    sheet.delete_rows(idx + 2)  # offset header
+
+
+def clear_all():
+    sheet.clear()
+    sheet.append_row(HEADER)
+
+
+
+# ======================================================
+# 🎨 UI
+# ======================================================
+
+st.set_page_config(page_title="Dashboard KPI/KRI/KCI", layout="wide")
+st.title("📊 Dashboard KPI / KRI / KCI – Google Sheets Version")
+
+df = load_data()
 
 # ======================================================
 # ➕ INPUT INDIKATOR BARU
@@ -191,10 +154,10 @@ arah = st.selectbox("Arah Penilaian", ["Higher is Better", "Lower is Better", "R
 
 tmin, tmax = None, None
 if arah == "Range":
-    col_r1, col_r2 = st.columns(2)
-    with col_r1:
+    r1, r2 = st.columns(2)
+    with r1:
         tmin = st.number_input("Target Min", 0.0)
-    with col_r2:
+    with r2:
         tmax = st.number_input("Target Max", 0.0)
 
 ket = st.text_area("Keterangan")
@@ -221,19 +184,17 @@ if st.button("💾 Simpan Indikator"):
     st.rerun()
 
 # ======================================================
-# 📋 TABEL DATA
+# 📋 DATA TABLE
 # ======================================================
 
 st.subheader("📋 Data Indikator")
-
 st.dataframe(df, use_container_width=True)
 
 # ======================================================
-# ✏️ INLINE EDIT (EDIT LANGSUNG)
+# ✏️ INLINE EDIT
 # ======================================================
 
 st.subheader("✏️ Edit Tabel")
-
 edited = st.data_editor(df, num_rows="dynamic")
 
 if st.button("💾 Simpan Perubahan Table"):
@@ -249,7 +210,6 @@ st.subheader("🗑 Hapus Indikator")
 
 if len(df) > 0:
     pilih = st.selectbox("Pilih indikator:", df["Nama_Indikator"])
-
     if st.button("Hapus Sekarang"):
         idx = df.index[df["Nama_Indikator"] == pilih][0]
         delete_row(idx)
@@ -269,7 +229,7 @@ with st.expander("⚠ Clear Semua Data"):
         st.rerun()
 
 # ======================================================
-# 🔥 DASHBOARD UNTUK STATUS MERAH
+# 🔥 DASHBOARD MERAH
 # ======================================================
 
 st.subheader("🚨 Indikator Status Merah")
@@ -277,20 +237,11 @@ st.subheader("🚨 Indikator Status Merah")
 df_merah = df[df["Status"] == "Merah"]
 
 def mini_chart(row):
-    st.markdown(
-        f"<b>{row['Nama_Indikator']}</b>",
-        unsafe_allow_html=True
-    )
-
-    target = float(row["Target"])
-    real = float(row["Realisasi"])
+    st.markdown(f"<b>{row['Nama_Indikator']}</b>", unsafe_allow_html=True)
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=[real], y=["Realisasi"], orientation="h",
-                         marker=dict(color="#ff6b6b")))
-    fig.add_trace(go.Bar(x=[target], y=["Target"], orientation="h",
-                         marker=dict(color="#9aa0a6")))
-
+    fig.add_trace(go.Bar(x=[row["Realisasi"]], y=["Realisasi"], orientation="h", marker=dict(color="#ff6b6b")))
+    fig.add_trace(go.Bar(x=[row["Target"]], y=["Target"], orientation="h", marker=dict(color="#9aa0a6")))
     fig.update_layout(height=120, showlegend=False)
     st.plotly_chart(fig, use_container_width=True)
 
@@ -308,7 +259,3 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
-
-
-
-
