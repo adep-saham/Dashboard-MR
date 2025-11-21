@@ -143,7 +143,7 @@ def clear_all():
 # ======================================================
 
 st.set_page_config(page_title="Dashboard KPI/KRI/KCI", layout="wide")
-st.title("📊 Dashboard KPI / KRI / KCI – Google Sheets Version")
+st.title("📊 Dashboard KPI / KRI / KCI")
 
 df = load_data()
 
@@ -327,6 +327,7 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
 
 
 
