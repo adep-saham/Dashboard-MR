@@ -4,6 +4,47 @@ import gspread
 from google.oauth2.service_account import Credentials
 import plotly.graph_objects as go
 
+# --- CUSTOM GLOBAL THEME CSS ---
+st.markdown("""
+<style>
+/* Card Style */
+.metric-card {
+    padding: 18px;
+    border-radius: 12px;
+    background: #ffffffaa;
+    border: 1px solid #ddd;
+    margin-bottom: 12px;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Section Title */
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 20px;
+    color: #007A70;
+}
+
+/* Indicator Title */
+.ind-title {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* Capaian Label */
+.capaian {
+    color: #D9534F;
+    font-weight: 700;
+}
+
+/* Sidebar Beautify */
+[data-testid="stSidebar"] {
+    background-color: #F2F7F7;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 # ======================================================
 # 🔧 SETUP GOOGLE SHEETS
 # ======================================================
@@ -348,6 +389,7 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
 
 
 
