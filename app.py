@@ -68,8 +68,15 @@ def hitung_status(row):
 # ======================================================
 
 def load_data():
-    data = sheet.get_all_records()
-    df = pd.DataFrame(data)
+    """Load data dari Google Sheets → DataFrame"""
+    raw = sheet.get_values()
+
+    if not raw or len(raw) <= 1:
+        return pd.DataFrame(columns=HEADER)
+
+    df = pd.DataFrame(raw[1:], columns=raw[0])
+    return df
+
 
     # jika kosong → buat df kosong
     if df.empty:
@@ -97,11 +104,15 @@ def load_data():
 
 
 def save_data(df):
+     """Simpan DataFrame → Google Sheets"""
     sheet.clear()
     sheet.append_row(HEADER)
+    time.sleep(0.3)
+
     rows = df.values.tolist()
     for r in rows:
         sheet.append_row(r)
+        time.sleep(0.05)
 
 
 def add_row(row_dict):
@@ -308,4 +319,5 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
 
