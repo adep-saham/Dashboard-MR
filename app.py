@@ -80,6 +80,34 @@ st.title("📊 Dashboard KPI / KRI / KCI – Google Sheets Version")
 
 df = load_data()
 
+# ===========================
+#  Tambah kolom STATUS
+# ===========================
+def hitung_status(row):
+    try:
+        real = float(row["Realisasi"])
+        target = float(row["Target"])
+    except:
+        return "N/A"
+
+    arah = str(row.get("Arah", "")).strip().lower()
+
+    if arah == "higher is better":
+        return "Hijau" if real >= target else "Merah"
+
+    if arah == "lower is better":
+        return "Hijau" if real <= target else "Merah"
+
+    if arah == "range":
+        try:
+            tmin = float(row["Target_Min"])
+            tmax = float(row["Target_Max"])
+            return "Hijau" if tmin <= real <= tmax else "Merah"
+        except:
+            return "N/A"
+
+    return "N/A"
+
 # jika kosong → buat header
 if df.empty:
     df = pd.DataFrame(columns=HEADER)
@@ -260,5 +288,6 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
 
 
