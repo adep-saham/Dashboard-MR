@@ -447,6 +447,9 @@ def tampilkan_chart(row):
 
 st.markdown("## 🚨 Indikator Status Merah Saja")
 
+if "Status" not in df.columns:
+    df["Status"] = df.apply(hitung_status, axis=1)
+
 # Filter merah
 df_merah = df[df["Status"] == "Merah"]
 
@@ -481,6 +484,7 @@ tampilkan_section("⚠️ KRI Bermasalah (Merah)", df_kri_m)
 
 # 🔐 KCI Merah
 tampilkan_section("🔐 KCI Bermasalah (Merah)", df_kci_m)
+
 
 
 
