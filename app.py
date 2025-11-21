@@ -319,56 +319,48 @@ df_merah = df[df["Status"] == "Merah"]
 
 def mini_chart(row):
 
-    # Judul kecil
-    st.markdown(
-        f"<div style='font-size:14px; font-weight:600;'>{row['Nama_Indikator']}</div>",
-        unsafe_allow_html=True
-    )
+    with st.container():
+        st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
 
-    # Unit & kategori
-    st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
+        st.markdown(
+            f"<div class='ind-title'>{row['Nama_Indikator']}</div>",
+            unsafe_allow_html=True
+        )
 
-    # Hitung capaian (%)
-    target = float(row["Target"])
-    real = float(row["Realisasi"])
-    capai = (real / target * 100) if target > 0 else 0
+        st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
 
-    # Tampilkan capaian
-    st.markdown(
-        f"<span style='color:#d9534f; font-weight:bold;'>Capaian: {capai:.2f}%</span>",
-        unsafe_allow_html=True
-    )
+        target = float(row["Target"])
+        real = float(row["Realisasi"])
+        capai = (real/target*100) if target > 0 else 0
 
-    # --- MINI HORIZONTAL BAR ---
-    fig = go.Figure()
+        st.markdown(
+            f"<span class='capaian'>Capaian: {capai:.1f}%</span>",
+            unsafe_allow_html=True
+        )
 
-    # Realisasi
-    fig.add_trace(go.Bar(
-        x=[real],
-        y=["Realisasi"],
-        orientation='h',
-        marker=dict(color="#ff6b6b"),
-        width=0.35
-    ))
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            x=[real], y=["Realisasi"], orientation="h",
+            marker=dict(color="#FF6B6B"), width=0.35
+        ))
+        fig.add_trace(go.Bar(
+            x=[target], y=["Target"], orientation="h",
+            marker=dict(color="#9AA0A6"), width=0.35
+        ))
 
-    # Target
-    fig.add_trace(go.Bar(
-        x=[target],
-        y=["Target"],
-        orientation='h',
-        marker=dict(color="#9aa0a6"),
-        width=0.35
-    ))
+        fig.update_layout(
+            height=110,
+            margin=dict(l=0, r=0, t=0, b=0),
+            showlegend=False,
+            xaxis=dict(showgrid=True),
+            yaxis=dict(showgrid=False),
+        )
 
-    fig.update_layout(
-        height=120,
-        margin=dict(l=0, r=0, t=5, b=0),
-        showlegend=False,
-        xaxis=dict(showgrid=True, zeroline=False),
-        yaxis=dict(showgrid=False)
-    )
+        st.plotly_chart(fig, use_container_width=True)
 
-    st.plotly_chart(fig, use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
 
 
 def tampil_section(title, data):
@@ -389,6 +381,7 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
 
 
 
