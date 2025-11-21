@@ -9,7 +9,8 @@ import os
 import altair as alt
 import plotly.graph_objects as go
 import plotly.express as px
-
+import gspread
+from google.oauth2.service_account import Credentials
 
 # ------------------------------------------------------------
 #  THEME COLORS
@@ -408,6 +409,19 @@ def tampilkan_chart(row):
 
     st.plotly_chart(fig, use_container_width=True)
 
+# =============================
+# 🔐 Load Google Service Account dari Secrets
+# =============================
+creds = Credentials.from_service_account_info(
+    st.secrets["google_service_account"]
+)
+
+client = gspread.authorize(creds)
+sheet = client.open("kpi_data").sheet1
+
+# Load DataFrame
+data = sheet.get_all_records()
+df = pd.DataFrame(data)
 
 # =====================================================
 #  DASHBOARD: Hanya Status Merah (KPI / KRI / KCI)
@@ -449,6 +463,7 @@ tampilkan_section("⚠️ KRI Bermasalah (Merah)", df_kri_m)
 
 # 🔐 KCI Merah
 tampilkan_section("🔐 KCI Bermasalah (Merah)", df_kci_m)
+
 
 
 
