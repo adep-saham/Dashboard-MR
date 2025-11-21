@@ -237,25 +237,75 @@ st.subheader("🚨 Indikator Status Merah")
 df_merah = df[df["Status"] == "Merah"]
 
 def mini_chart(row):
-    st.markdown(f"<b>{row['Nama_Indikator']}</b>", unsafe_allow_html=True)
 
+    # Judul kecil
+    st.markdown(
+        f"<div style='font-size:14px; font-weight:600;'>{row['Nama_Indikator']}</div>",
+        unsafe_allow_html=True
+    )
+
+    # Unit & kategori
+    st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
+
+    # Hitung capaian (%)
+    target = float(row["Target"])
+    real = float(row["Realisasi"])
+    capai = (real / target * 100) if target > 0 else 0
+
+    # Tampilkan capaian
+    st.markdown(
+        f"<span style='color:#d9534f; font-weight:bold;'>Capaian: {capai:.2f}%</span>",
+        unsafe_allow_html=True
+    )
+
+    # --- MINI HORIZONTAL BAR ---
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=[row["Realisasi"]], y=["Realisasi"], orientation="h", marker=dict(color="#ff6b6b")))
-    fig.add_trace(go.Bar(x=[row["Target"]], y=["Target"], orientation="h", marker=dict(color="#9aa0a6")))
-    fig.update_layout(height=120, showlegend=False)
+
+    # Realisasi
+    fig.add_trace(go.Bar(
+        x=[real],
+        y=["Realisasi"],
+        orientation='h',
+        marker=dict(color="#ff6b6b"),
+        width=0.35
+    ))
+
+    # Target
+    fig.add_trace(go.Bar(
+        x=[target],
+        y=["Target"],
+        orientation='h',
+        marker=dict(color="#9aa0a6"),
+        width=0.35
+    ))
+
+    fig.update_layout(
+        height=120,
+        margin=dict(l=0, r=0, t=5, b=0),
+        showlegend=False,
+        xaxis=dict(showgrid=True, zeroline=False),
+        yaxis=dict(showgrid=False)
+    )
+
     st.plotly_chart(fig, use_container_width=True)
+
 
 def tampil_section(title, data):
     st.markdown(f"### {title}")
+
     if len(data) == 0:
-        st.success("Tidak ada yang merah.")
+        st.success("✨ Semua indikator aman.")
         return
-    col1, col2, col3, col4 = st.columns(4)
+
+    col1, col2, col3, col4 = st.columns(4, gap="large")
     cols = [col1, col2, col3, col4]
-    for i, (_, r) in enumerate(data.iterrows()):
-        with cols[i % 4]:
-            mini_chart(r)
+
+    for idx, (_, row) in enumerate(data.iterrows()):
+        with cols[idx % 4]:
+            mini_chart(row)
+
 
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
