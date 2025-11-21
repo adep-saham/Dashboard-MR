@@ -249,8 +249,10 @@ st.subheader("🗑 Hapus Indikator")
 if len(df) > 0:
     pilih = st.selectbox("Pilih indikator:", df["Nama_Indikator"])
     if st.button("Hapus Sekarang"):
-        idx = df.index[df["Nama_Indikator"] == pilih][0]
-        delete_row(idx)
+        idx_list = df.index[df["Nama_Indikator"] == pilih].tolist()
+        if len(idx_list) > 0:
+            delete_row(idx_list[0])
+
         st.success("✔ Berhasil dihapus.")
         st.rerun()
 else:
@@ -346,6 +348,7 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
 
 
 
