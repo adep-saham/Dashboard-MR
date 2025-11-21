@@ -314,6 +314,65 @@ if st.button("💾 Simpan Perubahan Tabel"):
 
 
 
+# =========================
+#   FUNGSI CHART MINI
+# =========================
+def tampilkan_chart(row):
+
+    # Judul Indikator (diperkecil ukuran font)
+    st.markdown(
+        f"<div style='font-size:14px; font-weight:600;'>{row['Nama_Indikator']}</div>",
+        unsafe_allow_html=True
+    )
+
+    # Unit & Kategori
+    st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
+
+    # Hitung capaian
+    target = float(row['Target'])
+    real = float(row['Realisasi'])
+    capai = (real / target * 100) if target > 0 else 0
+
+    # Tampilkan capaian
+    st.markdown(
+        f"<span style='color:#d9534f; font-weight:bold;'>Capaian: {capai:.2f}%</span>",
+        unsafe_allow_html=True
+    )
+
+    # ======================
+    #   MINI BAR CHART
+    # ======================
+    fig = go.Figure()
+
+    # Realsiasi
+    fig.add_trace(go.Bar(
+        x=[real],
+        y=["Realisasi"],
+        orientation="h",
+        marker=dict(color="#ff6b6b"),
+        width=0.35
+    ))
+
+    # Target
+    fig.add_trace(go.Bar(
+        x=[target],
+        y=["Target"],
+        orientation="h",
+        marker=dict(color="#9aa0a6"),
+        width=0.35
+    ))
+
+    fig.update_layout(
+        height=120,
+        showlegend=False,
+        margin=dict(l=0, r=0, t=5, b=0),
+        xaxis=dict(showgrid=True, zeroline=False),
+        yaxis=dict(showgrid=False)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
 # =====================================================
 #  DASHBOARD PER JENIS (KPI / KRI / KCI)
 # =====================================================
@@ -422,6 +481,7 @@ tampilkan_section("⚠️ KRI Bermasalah (Merah)", df_kri_m)
 
 # 🔐 KCI Merah
 tampilkan_section("🔐 KCI Bermasalah (Merah)", df_kci_m)
+
 
 
 
