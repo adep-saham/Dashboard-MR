@@ -26,39 +26,45 @@ SHEET_NAME = "Sheet1"
 
 sheet = client.open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
 
-# ==========================================
-# 📌 CRUD FUNCTIONS (MASTER)
-# ==========================================
+# ============================================================
+# 🔧 CRUD FUNCTIONS UNTUK GOOGLE SHEETS
+# ============================================================
 
 HEADER = [
     "Jenis","Nama_Indikator","Kategori","Unit","Pemilik","Tanggal",
-    "Target","Realisasi","Satuan","Keterangan",
-    "Arah","Target_Min","Target_Max","Tahun"
+    "Target","Realisasi","Satuan","Keterangan","Arah",
+    "Target_Min","Target_Max","Tahun"
 ]
 
 def load_data():
-    """Load data dari Google Sheets"""
+    """Load data dari Google Sheets → DataFrame"""
     data = sheet.get_all_records()
     df = pd.DataFrame(data)
     return df
 
-def append_row(row_dict):
-    """Tambah 1 row ke Google Sheets"""
-    row = [row_dict.get(col, "") for col in HEADER]
-    sheet.append_row(row)
 
-def overwrite_sheet(df):
-    """Overwrite entire sheet (used for edit/delete)"""
+def save_data(df):
+    """Simpan DataFrame → Google Sheets"""
     sheet.clear()
     sheet.append_row(HEADER)
-    sheet.append_rows(df.values.tolist())
+    rows = df.values.tolist()
+    for r in rows:
+        sheet.append_row(r)
 
-def delete_row_by_name(nama_indikator):
-    """Hapus row berdasarkan Nama_Indikator"""
-    df = load_data()
-    df_new = df[df["Nama_Indikator"] != nama_indikator]
-    overwrite_sheet(df_new)
-    return df_new
+
+def delete_row(index):
+    """Menghapus 1 baris berdasarkan index (0-based DataFrame)"""
+    # +2 karena:
+    # baris 1 = HEADER
+    # baris 2 = index 0 df
+    sheet.delete_rows(index + 2)
+
+
+def clear_all():
+    """Hapus seluruh data → hanya header yang ditinggal"""
+    sheet.clear()
+    sheet.append_row(HEADER)
+
 
 
 # ======================================================
@@ -254,4 +260,5 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
 
