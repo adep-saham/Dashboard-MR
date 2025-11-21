@@ -96,7 +96,7 @@ FILE_NAME = get_file_path(tahun_pilih)
 #  LOAD DATA
 # ------------------------------------------------------------
 if os.path.exists(FILE_NAME):
-    df = pd.read_csv(FILE_NAME)
+    df = pd.read_csv("data/kpi_data.csv")
 else:
     df = init_data()
 
@@ -484,6 +484,7 @@ tampilkan_section("⚠️ KRI Bermasalah (Merah)", df_kri_m)
 
 # 🔐 KCI Merah
 tampilkan_section("🔐 KCI Bermasalah (Merah)", df_kci_m)
+
 
 
 
