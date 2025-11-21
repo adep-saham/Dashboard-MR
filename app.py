@@ -74,68 +74,67 @@ HEADER = [
 ]
 
 def load_data():
-    """Load data dari Google Sheets → DataFrame (clean, no duplicates)"""
+    """Load data dari Google Sheets → DataFrame"""
+
     raw = sheet.get_values()
 
-    # Jika sheet kosong → buat df kosong
-    if not raw or len(raw) == 0:
+    # Jika sheet kosong
+    if not raw:
         return pd.DataFrame(columns=HEADER)
 
-    # Jika hanya header
+    # Jika hanya header tanpa data
     if len(raw) == 1:
         return pd.DataFrame(columns=HEADER)
 
-    # Convert: baris pertama = header asli sheet
+    # Baris 0 = header, baris 1..n = data
     df = pd.DataFrame(raw[1:], columns=raw[0])
 
-    # Pastikan semua kolom HEADER ada
+    # Pastikan df memiliki seluruh kolom HEADER
     for col in HEADER:
         if col not in df.columns:
             df[col] = ""
 
-    # Convert numeric
+    # Hapus kolom liar yg tidak ada dlm HEADER
+    df = df[HEADER]
+
+    # Normalisasi nilai numerik
     df["Target"] = pd.to_numeric(df["Target"], errors="coerce").fillna(0)
     df["Realisasi"] = pd.to_numeric(df["Realisasi"], errors="coerce").fillna(0)
     df["Target_Min"] = pd.to_numeric(df["Target_Min"], errors="coerce").fillna(0)
     df["Target_Max"] = pd.to_numeric(df["Target_Max"], errors="coerce").fillna(0)
 
-    # Hitung Status
+    # Hitung status
     df["Status"] = df.apply(hitung_status, axis=1)
 
-    # Skor normal
+    # Skor Normal
     df["Skor_Normal"] = ((df["Realisasi"] / df["Target"]) * 100).fillna(0).round(2)
 
     return df
 
 
 def save_data(df):
-    """Simpan DataFrame → Google Sheets"""
-    import time
+    """Simpan DataFrame → Google Sheets tanpa duplikasi header"""
     sheet.clear()
     sheet.append_row(HEADER)
-    time.sleep(0.2)
 
-    rows = df[HEADER].values.tolist()   # pastikan urutan sesuai header
-
+    rows = df[HEADER].values.tolist()
     for r in rows:
         sheet.append_row(r)
-        time.sleep(0.05)
+
 
 
 def add_row(row_dict):
-    """Tambah 1 baris ke Google Sheets"""
     sheet.append_row([row_dict[h] for h in HEADER])
 
 
 def delete_row(idx):
-    """Delete baris di Google Sheet berdasarkan index DataFrame"""
-    sheet.delete_rows(idx + 2)  # +2 karena header di row1
+    sheet.delete_rows(idx + 2)  # offset header
 
 
 def clear_all():
-    """Hapus semua data kecuali header"""
     sheet.clear()
     sheet.append_row(HEADER)
+
 
 
 
@@ -328,6 +327,7 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
 
 
 
