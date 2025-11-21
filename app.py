@@ -312,68 +312,175 @@ if st.button("💾 Simpan Perubahan Tabel"):
     st.success("Perubahan pada tabel berhasil disimpan!")
     st.rerun()
 
+# =========================
+#   FUNGSI CHART MINI
+# =========================
+def tampilkan_chart(row):
+
+    # Judul Indikator (diperkecil ukuran font)
+    st.markdown(
+        f"<div style='font-size:14px; font-weight:600;'>{row['Nama_Indikator']}</div>",
+        unsafe_allow_html=True
+    )
+
+    # Unit & Kategori
+    st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
+
+    # Hitung capaian
+    target = float(row['Target'])
+    real = float(row['Realisasi'])
+    capai = (real / target * 100) if target > 0 else 0
+
+    # Tampilkan capaian
+    st.markdown(
+        f"<span style='color:#d9534f; font-weight:bold;'>Capaian: {capai:.2f}%</span>",
+        unsafe_allow_html=True
+    )
+
+    # ======================
+    #   MINI BAR CHART
+    # ======================
+    fig = go.Figure()
+
+    # Realsiasi
+    fig.add_trace(go.Bar(
+        x=[real],
+        y=["Realisasi"],
+        orientation="h",
+        marker=dict(color="#ff6b6b"),
+        width=0.35
+    ))
+
+    # Target
+    fig.add_trace(go.Bar(
+        x=[target],
+        y=["Target"],
+        orientation="h",
+        marker=dict(color="#9aa0a6"),
+        width=0.35
+    ))
+
+    fig.update_layout(
+        height=120,
+        showlegend=False,
+        margin=dict(l=0, r=0, t=5, b=0),
+        xaxis=dict(showgrid=True, zeroline=False),
+        yaxis=dict(showgrid=False)
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
 
-# ============================================================
-#  📈 Combo Chart Profesional — Target vs Realisasi
-# ============================================================
-st.markdown("## 📊 KPI Dashboard")
 
-# Ambil data indikator
-df_bar = df.copy()
+# =====================================================
+#  DASHBOARD PER JENIS (KPI / KRI / KCI)
+# =====================================================
 
-# Urutkan supaya output rapi
-df_bar = df_bar.sort_values("Nama_Indikator")
+st.markdown("## 📊 Dashboard")
 
-# Buat 4 kolom
-col1, col2, col3, col4 = st.columns(4, gap="large")
+# Pisahkan data berdasarkan jenis indikator
+df_kpi = df[df["Jenis"] == "KPI"]
+df_kri = df[df["Jenis"] == "KRI"]
+df_kci = df[df["Jenis"] == "KCI"]
 
-cols = [col1, col2, col3, col4]
+# 🔹 Tampilkan fungsi untuk setiap section
+def tampilkan_section(title, data):
+    st.markdown(f"### {title}")
 
-# Loop semua indikator
-for idx, (_, row) in enumerate(df_bar.iterrows()):
-    col = cols[idx % 4]  # setiap 4 pindah baris ke bawah
+    if len(data) == 0:
+        st.info("Tidak ada data untuk ditampilkan.")
+        return
 
-    with col:
-        st.markdown(f"##### **{row['Nama_Indikator']}**")
-        st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
+    col1, col2, col3, col4 = st.columns(4, gap="large")
+    cols = [col1, col2, col3, col4]
 
-        target = row['Target']
-        real = row['Realisasi']
-        capai = (real / target * 100) if target > 0 else 0
+    for idx, (_, row) in enumerate(data.iterrows()):
+        with cols[idx % 4]:
+            tampilkan_chart(row)
 
-        st.markdown(f"""
-        <span style='color:#d9534f; font-weight:bold;'>Capaian: {capai:.2f}%</span>
-        """, unsafe_allow_html=True)
+# Panggil section-nya
+tampilkan_section("🔥 KPI", df_kpi)
+tampilkan_section("⚠️ KRI", df_kri)
+tampilkan_section("🔐 KCI", df_kci)
 
-        # --- Mini Horizontal Bar ---
-        fig = go.Figure()
 
-        fig.add_trace(go.Bar(
-            x=[real],
-            y=["Realisasi"],
-            orientation='h',
-            marker=dict(color="#ff6b6b"),
-            width=0.4
-        ))
+# =========================
+#   FUNGSI CHART MINI
+# =========================
+def tampilkan_chart(row):
+    st.markdown(
+        f"<div style='font-size:14px; font-weight:600;'>{row['Nama_Indikator']}</div>",
+        unsafe_allow_html=True
+    )
+    st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
 
-        fig.add_trace(go.Bar(
-            x=[target],
-            y=["Target"],
-            orientation='h',
-            marker=dict(color="#9aa0a6"),
-            width=0.4
-        ))
+    target = float(row['Target'])
+    real = float(row['Realisasi'])
+    capai = (real / target * 100) if target > 0 else 0
 
-        fig.update_layout(
-            height=130,
-            showlegend=False,
-            margin=dict(l=0, r=0, t=10, b=0),
-            xaxis=dict(showgrid=True, zeroline=False),
-            yaxis=dict(showgrid=False)
-        )
+    st.markdown(
+        f"<span style='color:#d9534f; font-weight:bold;'>Capaian: {capai:.2f}%</span>",
+        unsafe_allow_html=True
+    )
 
-        st.plotly_chart(fig, use_container_width=True)
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=[real], y=["Realisasi"], orientation="h",
+                         marker=dict(color="#ff6b6b"), width=0.35))
+    fig.add_trace(go.Bar(x=[target], y=["Target"], orientation="h",
+                         marker=dict(color="#9aa0a6"), width=0.35))
+
+    fig.update_layout(
+        height=120,
+        showlegend=False,
+        margin=dict(l=0, r=0, t=5, b=0),
+        xaxis=dict(showgrid=True),
+        yaxis=dict(showgrid=False),
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+
+# =====================================================
+#  DASHBOARD: Hanya Status Merah (KPI / KRI / KCI)
+# =====================================================
+
+st.markdown("## 🚨 Indikator Status Merah Saja")
+
+# Filter merah
+df_merah = df[df["Status"] == "Merah"]
+
+# Pisahkan per jenis
+df_kpi_m = df_merah[df_merah["Jenis"] == "KPI"]
+df_kri_m = df_merah[df_merah["Jenis"] == "KRI"]
+df_kci_m = df_merah[df_merah["Jenis"] == "KCI"]
+
+
+# SECTION TEMPLATE
+def tampilkan_section(title, data):
+    st.markdown(f"### {title}")
+
+    if len(data) == 0:
+        st.success("✨ Semua indikator aman (tidak ada yang merah).")
+        return
+
+    col1, col2, col3, col4 = st.columns(4, gap="large")
+    cols = [col1, col2, col3, col4]
+
+    for idx, (_, row) in enumerate(data.iterrows()):
+        with cols[idx % 4]:
+            tampilkan_chart(row)
+
+
+
+# 🔥 KPI Merah
+tampilkan_section("🔥 KPI Bermasalah (Merah)", df_kpi_m)
+
+# ⚠️ KRI Merah
+tampilkan_section("⚠️ KRI Bermasalah (Merah)", df_kri_m)
+
+# 🔐 KCI Merah
+tampilkan_section("🔐 KCI Bermasalah (Merah)", df_kci_m)
 
 
 
