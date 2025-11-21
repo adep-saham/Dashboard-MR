@@ -417,7 +417,7 @@ creds = Credentials.from_service_account_info(
 )
 
 client = gspread.authorize(creds)
-sheet = client.open("kpi_data").sheet1
+sheet = client.open("kpi_dashboard_data").sheet1
 
 # Load DataFrame
 data = sheet.get_all_records()
@@ -463,6 +463,7 @@ tampilkan_section("⚠️ KRI Bermasalah (Merah)", df_kri_m)
 
 # 🔐 KCI Merah
 tampilkan_section("🔐 KCI Bermasalah (Merah)", df_kci_m)
+
 
 
 
