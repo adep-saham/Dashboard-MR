@@ -26,9 +26,9 @@ SHEET_NAME = "Sheet1"
 
 sheet = client.open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
 
-# ======================================================
+# ==========================================
 # 📌 CRUD FUNCTIONS (MASTER)
-# ======================================================
+# ==========================================
 
 HEADER = [
     "Jenis","Nama_Indikator","Kategori","Unit","Pemilik","Tanggal",
@@ -42,23 +42,24 @@ def load_data():
     df = pd.DataFrame(data)
     return df
 
-def save_data(df: pd.DataFrame):
-    """Overwrite seluruh isi Google Sheets"""
+def append_row(row_dict):
+    """Tambah 1 row ke Google Sheets"""
+    row = [row_dict.get(col, "") for col in HEADER]
+    sheet.append_row(row)
+
+def overwrite_sheet(df):
+    """Overwrite entire sheet (used for edit/delete)"""
     sheet.clear()
-    sheet.update([df.columns.values.tolist()] + df.values.tolist())
+    sheet.append_row(HEADER)
+    sheet.append_rows(df.values.tolist())
 
-def add_row(new_row: dict):
-    """Tambah baris baru"""
-    sheet.append_row(list(new_row.values()))
+def delete_row_by_name(nama_indikator):
+    """Hapus row berdasarkan Nama_Indikator"""
+    df = load_data()
+    df_new = df[df["Nama_Indikator"] != nama_indikator]
+    overwrite_sheet(df_new)
+    return df_new
 
-def delete_row(index):
-    """Delete per baris (index mulai 0 → sheet baris +2)"""
-    sheet.delete_rows(index + 2)
-
-def clear_all():
-    """Hapus semua data & tulis header"""
-    sheet.clear()
-    sheet.update([HEADER])
 
 # ======================================================
 # 🎨 UI SETUP
@@ -253,3 +254,4 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
