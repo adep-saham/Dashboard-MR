@@ -80,6 +80,26 @@ st.title("📊 Dashboard KPI / KRI / KCI – Google Sheets Version")
 
 df = load_data()
 
+# =====================================================
+# TAMBAHKAN KOLOM STATUS & SKOR NORMAL SETELAH LOAD DATA
+# =====================================================
+
+if len(df) > 0:
+
+    # pastikan numeric
+    df["Target"] = pd.to_numeric(df["Target"], errors="coerce")
+    df["Realisasi"] = pd.to_numeric(df["Realisasi"], errors="coerce")
+    df["Target_Min"] = pd.to_numeric(df.get("Target_Min"), errors="coerce")
+    df["Target_Max"] = pd.to_numeric(df.get("Target_Max"), errors="coerce")
+
+    # status
+    df["Status"] = df.apply(hitung_status, axis=1)
+
+    # skor normal (%)
+    df["Skor_Normal"] = (df["Realisasi"] / df["Target"]) * 100
+    df["Skor_Normal"] = df["Skor_Normal"].fillna(0).round(2)
+
+
 # ===========================
 #  Tambah kolom STATUS
 # ===========================
@@ -288,6 +308,7 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
 
 
 
