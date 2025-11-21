@@ -64,36 +64,45 @@ def hitung_status(row):
     return "N/A"
 
 # ======================================================
-# 🔧 CRUD GOOGLE SHEETS — FIXED
+# 🔧 CRUD GOOGLE SHEETS (FINAL FIX, NO DUPLICATE COLUMNS)
 # ======================================================
 
+HEADER = [
+    "Jenis","Nama_Indikator","Kategori","Unit","Pemilik","Tanggal",
+    "Target","Realisasi","Satuan","Keterangan","Arah",
+    "Target_Min","Target_Max","Tahun"
+]
+
 def load_data():
-    """Load data dari Google Sheets → DataFrame"""
+    """Load data dari Google Sheets → DataFrame (clean, no duplicates)"""
     raw = sheet.get_values()
 
-    # Jika sheet kosong
-    if not raw or len(raw) <= 1:
-        df = pd.DataFrame(columns=HEADER)
-        return df
+    # Jika sheet kosong → buat df kosong
+    if not raw or len(raw) == 0:
+        return pd.DataFrame(columns=HEADER)
 
-    # Data ada → convert ke dataframe
+    # Jika hanya header
+    if len(raw) == 1:
+        return pd.DataFrame(columns=HEADER)
+
+    # Convert: baris pertama = header asli sheet
     df = pd.DataFrame(raw[1:], columns=raw[0])
 
-    # Tambahkan kolom yang hilang agar sesuai HEADER
+    # Pastikan semua kolom HEADER ada
     for col in HEADER:
         if col not in df.columns:
             df[col] = ""
 
-    # Convert numerik
+    # Convert numeric
     df["Target"] = pd.to_numeric(df["Target"], errors="coerce").fillna(0)
     df["Realisasi"] = pd.to_numeric(df["Realisasi"], errors="coerce").fillna(0)
     df["Target_Min"] = pd.to_numeric(df["Target_Min"], errors="coerce").fillna(0)
     df["Target_Max"] = pd.to_numeric(df["Target_Max"], errors="coerce").fillna(0)
 
-    # Hitung status
+    # Hitung Status
     df["Status"] = df.apply(hitung_status, axis=1)
 
-    # Skor Normal
+    # Skor normal
     df["Skor_Normal"] = ((df["Realisasi"] / df["Target"]) * 100).fillna(0).round(2)
 
     return df
@@ -101,30 +110,33 @@ def load_data():
 
 def save_data(df):
     """Simpan DataFrame → Google Sheets"""
+    import time
     sheet.clear()
     sheet.append_row(HEADER)
-    time.sleep(0.3)
+    time.sleep(0.2)
 
-    rows = df.values.tolist()
+    rows = df[HEADER].values.tolist()   # pastikan urutan sesuai header
+
     for r in rows:
         sheet.append_row(r)
         time.sleep(0.05)
 
 
 def add_row(row_dict):
-    """Tambahkan data 1 baris ke Sheet"""
+    """Tambah 1 baris ke Google Sheets"""
     sheet.append_row([row_dict[h] for h in HEADER])
 
 
 def delete_row(idx):
-    """Hapus 1 baris dari Google Sheets"""
-    sheet.delete_rows(idx + 2)  # offset 1 header
+    """Delete baris di Google Sheet berdasarkan index DataFrame"""
+    sheet.delete_rows(idx + 2)  # +2 karena header di row1
 
 
 def clear_all():
-    """Hapus seluruh isi sheet & reset header"""
+    """Hapus semua data kecuali header"""
     sheet.clear()
     sheet.append_row(HEADER)
+
 
 
 # ======================================================
@@ -316,6 +328,7 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
 
 
 
