@@ -64,26 +64,22 @@ def hitung_status(row):
     return "N/A"
 
 # ======================================================
-# 🔧 CRUD GOOGLE SHEETS
+# 🔧 CRUD GOOGLE SHEETS — FIXED
 # ======================================================
 
 def load_data():
     """Load data dari Google Sheets → DataFrame"""
     raw = sheet.get_values()
 
+    # Jika sheet kosong
     if not raw or len(raw) <= 1:
-        return pd.DataFrame(columns=HEADER)
-
-    df = pd.DataFrame(raw[1:], columns=raw[0])
-    return df
-
-
-    # jika kosong → buat df kosong
-    if df.empty:
         df = pd.DataFrame(columns=HEADER)
-        save_data(df)
+        return df
 
-    # Tambahkan kolom yang hilang
+    # Data ada → convert ke dataframe
+    df = pd.DataFrame(raw[1:], columns=raw[0])
+
+    # Tambahkan kolom yang hilang agar sesuai HEADER
     for col in HEADER:
         if col not in df.columns:
             df[col] = ""
@@ -104,7 +100,7 @@ def load_data():
 
 
 def save_data(df):
-     """Simpan DataFrame → Google Sheets"""
+    """Simpan DataFrame → Google Sheets"""
     sheet.clear()
     sheet.append_row(HEADER)
     time.sleep(0.3)
@@ -121,13 +117,14 @@ def add_row(row_dict):
 
 
 def delete_row(idx):
-    sheet.delete_rows(idx + 2)  # offset header
+    """Hapus 1 baris dari Google Sheets"""
+    sheet.delete_rows(idx + 2)  # offset 1 header
 
 
 def clear_all():
+    """Hapus seluruh isi sheet & reset header"""
     sheet.clear()
     sheet.append_row(HEADER)
-
 
 
 # ======================================================
@@ -319,5 +316,6 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
 
 
