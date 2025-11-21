@@ -421,6 +421,18 @@ creds = Credentials.from_service_account_info(
 client = gspread.authorize(creds)
 sheet = client.open_by_key("1Ro8FWl9HTCxdiqpAuFbqA4St7NNFuzHyJHKXQ4fEwps").sheet1
 
+# --- TEST WRITE BUTTON ---
+st.header("🔧 Test Koneksi Google Sheets")
+
+if st.button("Test Write to Google Sheets"):
+    sheet.append_row([
+        "TEST", "KPI", "Kategori X", "Unit X", "Pemilik X",
+        "2025-01-01", 100, 50, "Kg", "OK", "Higher is Better",
+        0.0, 200, 2025
+    ])
+    st.success("✔️ Data test berhasil ditulis ke Google Sheets!")
+
+
 data = sheet.get_all_records()
 st.write(data)
 
@@ -465,6 +477,7 @@ tampilkan_section("⚠️ KRI Bermasalah (Merah)", df_kri_m)
 
 # 🔐 KCI Merah
 tampilkan_section("🔐 KCI Bermasalah (Merah)", df_kci_m)
+
 
 
 
