@@ -373,38 +373,6 @@ def tampilkan_chart(row):
     st.plotly_chart(fig, use_container_width=True)
 
 
-# =====================================================
-#  DASHBOARD PER JENIS (KPI / KRI / KCI)
-# =====================================================
-
-st.markdown("## 📊 Dashboard")
-
-# Pisahkan data berdasarkan jenis indikator
-df_kpi = df[df["Jenis"] == "KPI"]
-df_kri = df[df["Jenis"] == "KRI"]
-df_kci = df[df["Jenis"] == "KCI"]
-
-# 🔹 Tampilkan fungsi untuk setiap section
-def tampilkan_section(title, data):
-    st.markdown(f"### {title}")
-
-    if len(data) == 0:
-        st.info("Tidak ada data untuk ditampilkan.")
-        return
-
-    col1, col2, col3, col4 = st.columns(4, gap="large")
-    cols = [col1, col2, col3, col4]
-
-    for idx, (_, row) in enumerate(data.iterrows()):
-        with cols[idx % 4]:
-            tampilkan_chart(row)
-
-# Panggil section-nya
-tampilkan_section("🔥 KPI", df_kpi)
-tampilkan_section("⚠️ KRI", df_kri)
-tampilkan_section("🔐 KCI", df_kci)
-
-
 # =========================
 #   FUNGSI CHART MINI
 # =========================
@@ -481,6 +449,7 @@ tampilkan_section("⚠️ KRI Bermasalah (Merah)", df_kri_m)
 
 # 🔐 KCI Merah
 tampilkan_section("🔐 KCI Bermasalah (Merah)", df_kci_m)
+
 
 
 
