@@ -412,16 +412,18 @@ def tampilkan_chart(row):
 # =============================
 # 🔐 Load Google Service Account dari Secrets
 # =============================
+
 creds = Credentials.from_service_account_info(
-    st.secrets["google_service_account"]
+    st.secrets["google_service_account"],
+    scopes=["https://www.googleapis.com/auth/spreadsheets"]
 )
 
 client = gspread.authorize(creds)
-sheet = client.open("kpi_dashboard_data").sheet1
+sheet = client.open_by_key("1Ro8FWl9HTCxdiqpAuFbqA4St7NNFuzHyJHKXQ4fEwps").sheet1
 
-# Load DataFrame
 data = sheet.get_all_records()
-df = pd.DataFrame(data)
+st.write(data)
+
 
 # =====================================================
 #  DASHBOARD: Hanya Status Merah (KPI / KRI / KCI)
@@ -463,6 +465,7 @@ tampilkan_section("⚠️ KRI Bermasalah (Merah)", df_kri_m)
 
 # 🔐 KCI Merah
 tampilkan_section("🔐 KCI Bermasalah (Merah)", df_kci_m)
+
 
 
 
