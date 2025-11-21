@@ -3,6 +3,7 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 import plotly.graph_objects as go
+import requests
 
 # --- CUSTOM GLOBAL THEME CSS ---
 st.markdown("""
@@ -309,6 +310,26 @@ with st.expander("⚠ Clear Semua Data"):
         st.warning("SEMUA data telah dihapus!")
         st.rerun()
 
+# ------------------------------
+# AUTO TRIGGER WA UNTUK STATUS MERAH
+# ------------------------------
+
+# Load previous status merah untuk pembanding
+if "prev_red" not in st.session_state:
+    st.session_state.prev_red = set()
+
+current_red = set(df[df["Status"] == "Merah"]["Nama_Indikator"].tolist())
+
+# Deteksi indikator yang baru masuk status MERAH
+new_red = current_red - st.session_state.prev_red
+
+if len(new_red) > 0:
+    for nama in new_red:
+        message = f"⚠️ ALERT! Indikator '{nama}' sekarang berstatus MERAH!"
+        send_wa("62895704100212", "APIKEYMU", message)
+    st.session_state.prev_red = current_red
+
+
 # ======================================================
 # 🔥 DASHBOARD MERAH
 # ======================================================
@@ -381,6 +402,19 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
+
+def send_wa(phone_number, api_key, message):
+    """
+    Kirim pesan WA otomatis via CallMeBot.
+    phone_number = "62812xxxxxxx"
+    api_key = API KEY CallMeBot
+    """
+    url = f"https://api.callmebot.com/whatsapp.php?phone={phone_number}&text={message}&apikey={api_key}"
+    try:
+        r = requests.get(url)
+        return r.status_code == 200
+    except:
+        return False
 
 
 
