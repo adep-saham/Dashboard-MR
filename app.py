@@ -3,48 +3,6 @@ import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
 import plotly.graph_objects as go
-import requests
-
-# --- CUSTOM GLOBAL THEME CSS ---
-st.markdown("""
-<style>
-/* Card Style */
-.metric-card {
-    padding: 18px;
-    border-radius: 12px;
-    background: #ffffffaa;
-    border: 1px solid #ddd;
-    margin-bottom: 12px;
-    box-shadow: 0px 2px 5px rgba(0,0,0,0.05);
-}
-
-/* Section Title */
-.section-title {
-    font-size: 22px;
-    font-weight: 700;
-    margin-top: 20px;
-    color: #007A70;
-}
-
-/* Indicator Title */
-.ind-title {
-    font-size: 15px;
-    font-weight: 600;
-}
-
-/* Capaian Label */
-.capaian {
-    color: #D9534F;
-    font-weight: 700;
-}
-
-/* Sidebar Beautify */
-[data-testid="stSidebar"] {
-    background-color: #F2F7F7;
-}
-</style>
-""", unsafe_allow_html=True)
-
 
 # ======================================================
 # 🔧 SETUP GOOGLE SHEETS
@@ -310,26 +268,6 @@ with st.expander("⚠ Clear Semua Data"):
         st.warning("SEMUA data telah dihapus!")
         st.rerun()
 
-# ------------------------------
-# AUTO TRIGGER WA UNTUK STATUS MERAH
-# ------------------------------
-
-# Load previous status merah untuk pembanding
-if "prev_red" not in st.session_state:
-    st.session_state.prev_red = set()
-
-current_red = set(df[df["Status"] == "Merah"]["Nama_Indikator"].tolist())
-
-# Deteksi indikator yang baru masuk status MERAH
-new_red = current_red - st.session_state.prev_red
-
-if len(new_red) > 0:
-    for nama in new_red:
-        message = f"⚠️ ALERT! Indikator '{nama}' sekarang berstatus MERAH!"
-        send_wa("62895704100212", "APIKEYMU", message)
-    st.session_state.prev_red = current_red
-
-
 # ======================================================
 # 🔥 DASHBOARD MERAH
 # ======================================================
@@ -340,48 +278,56 @@ df_merah = df[df["Status"] == "Merah"]
 
 def mini_chart(row):
 
-    with st.container():
-        st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
+    # Judul kecil
+    st.markdown(
+        f"<div style='font-size:14px; font-weight:600;'>{row['Nama_Indikator']}</div>",
+        unsafe_allow_html=True
+    )
 
-        st.markdown(
-            f"<div class='ind-title'>{row['Nama_Indikator']}</div>",
-            unsafe_allow_html=True
-        )
+    # Unit & kategori
+    st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
 
-        st.caption(f"Unit: {row['Unit']} | Kategori: {row['Kategori']}")
+    # Hitung capaian (%)
+    target = float(row["Target"])
+    real = float(row["Realisasi"])
+    capai = (real / target * 100) if target > 0 else 0
 
-        target = float(row["Target"])
-        real = float(row["Realisasi"])
-        capai = (real/target*100) if target > 0 else 0
+    # Tampilkan capaian
+    st.markdown(
+        f"<span style='color:#d9534f; font-weight:bold;'>Capaian: {capai:.2f}%</span>",
+        unsafe_allow_html=True
+    )
 
-        st.markdown(
-            f"<span class='capaian'>Capaian: {capai:.1f}%</span>",
-            unsafe_allow_html=True
-        )
+    # --- MINI HORIZONTAL BAR ---
+    fig = go.Figure()
 
-        fig = go.Figure()
-        fig.add_trace(go.Bar(
-            x=[real], y=["Realisasi"], orientation="h",
-            marker=dict(color="#FF6B6B"), width=0.35
-        ))
-        fig.add_trace(go.Bar(
-            x=[target], y=["Target"], orientation="h",
-            marker=dict(color="#9AA0A6"), width=0.35
-        ))
+    # Realisasi
+    fig.add_trace(go.Bar(
+        x=[real],
+        y=["Realisasi"],
+        orientation='h',
+        marker=dict(color="#ff6b6b"),
+        width=0.35
+    ))
 
-        fig.update_layout(
-            height=110,
-            margin=dict(l=0, r=0, t=0, b=0),
-            showlegend=False,
-            xaxis=dict(showgrid=True),
-            yaxis=dict(showgrid=False),
-        )
+    # Target
+    fig.add_trace(go.Bar(
+        x=[target],
+        y=["Target"],
+        orientation='h',
+        marker=dict(color="#9aa0a6"),
+        width=0.35
+    ))
 
-        st.plotly_chart(fig, use_container_width=True)
+    fig.update_layout(
+        height=120,
+        margin=dict(l=0, r=0, t=5, b=0),
+        showlegend=False,
+        xaxis=dict(showgrid=True, zeroline=False),
+        yaxis=dict(showgrid=False)
+    )
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
-
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def tampil_section(title, data):
@@ -402,21 +348,6 @@ def tampil_section(title, data):
 tampil_section("🔥 KPI Merah", df_merah[df_merah["Jenis"] == "KPI"])
 tampil_section("⚠ KRI Merah", df_merah[df_merah["Jenis"] == "KRI"])
 tampil_section("🔐 KCI Merah", df_merah[df_merah["Jenis"] == "KCI"])
-
-def send_wa(phone_number, api_key, message):
-    """
-    Kirim pesan WA otomatis via CallMeBot.
-    phone_number = "62812xxxxxxx"
-    api_key = API KEY CallMeBot
-    """
-    url = f"https://api.callmebot.com/whatsapp.php?phone={phone_number}&text={message}&apikey={api_key}"
-    try:
-        r = requests.get(url)
-        return r.status_code == 200
-    except:
-        return False
-
-
 
 
 
